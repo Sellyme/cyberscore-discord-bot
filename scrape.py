@@ -55,14 +55,15 @@ def scrape():
 			flag_emoji = ":flag_" + country.lower() + ":"
 		
 		name = name_col.a.get_text()
-		game = game_col.strong.get_text()
+		game_name = game_col.strong.get_text()
 		game_link = game_col.a['href']
+		game = "["+game_name+"]("+CS_PREFIX+game_link+")"
 		
 		chart_links = list(chart_col.find_all('a'))
 		group_name = chart_links[0].get_text()
 		chart_name = chart_links[1].get_text()
 		chart_link = chart_col.find_all('a')[1]['href']
-		full_name = "["+game+"]("+CS_PREFIX+game_link+") → " + "["+group_name + " → " + chart_name+"]("+CS_PREFIX+chart_link+")"
+		chart = "["+group_name + " → " + chart_name+"]("+CS_PREFIX+chart_link+")"
 		
 		score = score_col.a.get_text()
 		pos = pos_col.get_text().replace(" ","")
@@ -74,7 +75,8 @@ def scrape():
 			csr = award_col.span.get_text()
 
 		#construct string
-		output = flag_emoji + " " + name + " just scored " + score + " on " + full_name + ".\n"
+		output = flag_emoji + " " + name + " just scored " + score + " on " + game + "\n"
+		output += chart + "\n"
 		output += "Position: " + pos + " ("+csr+")"
 		
 		results.append(output)
