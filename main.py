@@ -18,14 +18,14 @@ async def on_ready():
 	await scrape_latest()
 
 async def scrape_latest():
-	cs_channel = client.get_channel(test_channel)
+	cs_channel = client.get_channel(config.rss_channel)
 	while True:
 		results = scrape.scrape()
 		for msg in results:
 			print(msg)
 			await cs_channel.send(msg)
 		
-		await asyncio.sleep(scrape_frequency)
+		await asyncio.sleep(config.scrape_frequency)
 
 
 
