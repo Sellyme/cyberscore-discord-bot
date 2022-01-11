@@ -14,11 +14,6 @@ async def on_ready():
 	print(client.user, " has connected to Discord!")
 
 	await scrape_latest()
-	
-
-async def hello():
-	cs_channel = client.get_channel(930473063043178586)
-	await cs_channel.send("hello world")
 
 async def scrape_latest():
 	cs_channel = client.get_channel(930473063043178586)
