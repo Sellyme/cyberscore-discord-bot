@@ -2,7 +2,9 @@ import os #reading auth file
 import discord #discord bot
 from dotenv import load_dotenv #discord auth
 import asyncio
+
 import scrape
+import config
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -16,14 +18,14 @@ async def on_ready():
 	await scrape_latest()
 
 async def scrape_latest():
-	cs_channel = client.get_channel(930473063043178586)
+	cs_channel = client.get_channel(test_channel)
 	while True:
 		results = scrape.scrape()
 		for msg in results:
 			print(msg)
 			await cs_channel.send(msg)
 		
-		await asyncio.sleep(120)
+		await asyncio.sleep(scrape_frequency)
 
 
 
