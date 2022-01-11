@@ -23,7 +23,10 @@ async def scrape_latest():
 		results = scrape.scrape()
 		for msg in results:
 			print(msg)
-			await cs_channel.send(msg)
+			
+			#create embed for Discord
+			embed = discord.Embed(description=msg)
+			await cs_channel.send(embed=embed)
 		
 		await asyncio.sleep(config.scrape_frequency)
 

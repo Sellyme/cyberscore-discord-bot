@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 
 URL = "https://cyberscore.me.uk/latest_subs.php"
+CS_PREFIX = "https://cyberscore.me.uk"
 last_update_time = 0 #todo - set this to startup or a saved time
 
 def scrape():
@@ -46,7 +47,6 @@ def scrape():
 		award_col = columns[8]
 		#col 9 is empty
 
-
 		country = flag_col.img.get('alt')
 		#handle unknown locations
 		if country == "--":
@@ -56,11 +56,13 @@ def scrape():
 		
 		name = name_col.a.get_text()
 		game = game_col.strong.get_text()
+		game_link = game_col.a['href']
 		
 		chart_links = list(chart_col.find_all('a'))
 		group_name = chart_links[0].get_text()
 		chart_name = chart_links[1].get_text()
-		full_name = game + " → " + group_name + " → " + chart_name
+		chart_link = chart_col.find_all('a')[1]['href']
+		full_name = "["+game+"]("+CS_PREFIX+game_link+") → " + "["+group_name + " → " + chart_name+"]("+CS_PREFIX+chart_link+")"
 		
 		score = score_col.a.get_text()
 		pos = pos_col.get_text().replace(" ","")
