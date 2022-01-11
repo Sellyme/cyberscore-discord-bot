@@ -54,7 +54,10 @@ def scrape():
 		else:
 			flag_emoji = ":flag_" + country.lower() + ":"
 		
-		name = name_col.a.get_text()
+		user_name = name_col.a.get_text()
+		user_link = name_col.a['href']
+		user = "["+user_name+"]("+CS_PREFIX+user_link+")"
+		
 		game_name = game_col.strong.get_text()
 		game_link = game_col.a['href']
 		game = "["+game_name+"]("+CS_PREFIX+game_link+")"
@@ -65,7 +68,10 @@ def scrape():
 		chart_link = chart_col.find_all('a')[1]['href']
 		chart = "["+group_name + " → " + chart_name+"]("+CS_PREFIX+chart_link+")"
 		
-		score = score_col.a.get_text()
+		score_value = score_col.a.get_text()
+		score_link = score_col.a['href']
+		score = "["+score_value+"]("+CS_PREFIX+score_link+")"
+		
 		pos = pos_col.get_text().replace(" ","")
 		csr = award_col.strong
 		#csr is not displayed for UC charts, so display Challenge Points instead
@@ -75,9 +81,10 @@ def scrape():
 			csr = award_col.span.get_text()
 
 		#construct string
-		output = flag_emoji + " " + name + " just scored " + score + " on " + game + "\n"
-		output += chart + "\n"
-		output += "Position: " + pos + " ("+csr+")"
+		output = flag_emoji + " " + user + " just scored " + score
+		output += " (Pos: **" + pos + "** - " + csr+")\n"
+		output += game + " → " + chart
+
 		
 		results.append(output)
 
