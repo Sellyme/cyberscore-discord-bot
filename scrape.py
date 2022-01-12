@@ -1,12 +1,13 @@
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
+import re
 
-URL = "https://cyberscore.me.uk/latest_subs.php"
 CS_PREFIX = "https://cyberscore.me.uk"
 last_update_time = 0 #todo - set this to startup or a saved time
 
-def scrape():
+def scrape_latest():
+	URL = "https://cyberscore.me.uk/latest_subs.php"
 	results = []
 
 	#perform web scrape
@@ -125,6 +126,46 @@ def scrape():
 	f.close()
 	
 	return results
+
+def scrape_leaderboard():
+	URL = "https://cyberscore.me.uk/scoreboard.php"
+
+	#perform web scrape
+	page = requests.get(URL)
+	soup = BeautifulSoup(page.content, "html.parser")
+	
+	table = soup.find(id="scoreboard_classic")
+	players = list(table.find_all("tr"))
+	
+	output = ""
+	save_data = ""
+	for i in range(0,10): #iterate over the top 10 players
+		player = players[i]
+		
+		country_code = player.find(class_="flag").img["alt"].lower()
+		flag_emoji = get_flag_emoji(country_code)
+		
+		user_cell = player.find(class_="name").a
+		user = user_cell.get_text()
+		#users are listed as e.g., 'John “N00bSl4y3r69” Doe', so extract only the alias
+		#note the use of "smart quotes" (“”) and not regular ones ("")
+		matches = re.findall(r'“([^”]*)”', user)
+		if(matches):
+			user_name = matches[0]
+		else: #if there's no matches use the full string
+			user_name = user
+		user_link = user_cell["href"]
+		
+		csr_raw = player.find(class_="scoreboardCSR").get_text().strip()
+		#todo - strip the " CSR" for calculation/saving
+		
+		#todo - save and check position changes
+		pos_change = "    " #four spaces if no change, ▼▲ symbols otherwise
+		
+		#todo - if the user is in the top three, use a medal instead of position
+		output += pos_change + str(i+1) + ". ["+user_name+"]("+CS_PREFIX+user_link+") ("+csr_raw+")\n"
+	
+	return output
 
 def get_flag_emoji(country_code):
 	#Cyberscore flag codes don't exactly match Discord emoji codes

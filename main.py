@@ -18,17 +18,17 @@ async def on_ready():
 	await scrape_latest()
 
 async def scrape_latest():
-	cs_channel = client.get_channel(config.rss_channel)
+	channel = client.get_channel(config.rss_channel)
 	while True:
-		results = scrape.scrape()
+		results = scrape.scrape_latest()
 		for msg in results:
 			print(msg)
 			
 			#create embed for Discord
 			embed = discord.Embed(description=msg)
-			await cs_channel.send(embed=embed)
+			await channel.send(embed=embed)
 		
-		await asyncio.sleep(config.scrape_frequency)
+		await asyncio.sleep(config.submissions_frequency)
 
 
 
