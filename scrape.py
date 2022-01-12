@@ -115,13 +115,14 @@ def get_flag_emoji(country_code):
 	#Cyberscore flag codes don't exactly match Discord emoji codes
 	#Mainly with "Unknown", and dependencies/constituent countries
 	#So we hard code handling for those
-	if country == "--":
+	if country_code == "--":
 		flag_emoji = ":pirate_flag:"
-	elif country == "x1":
+	elif country_code == "x1":
 		flag_emoji = ":england:"
-	elif country == "x2":
+	elif country_code == "x2":
 		flag_emoji = ":scotland:"
-	elif country == "x3":
+	elif country_code == "x3":
 		flag_emoji = ":wales:"
 	else:
-		flag_emoji = ":flag_" + country + ":"
+		flag_emoji = ":flag_" + country_code + ":"
+	return flag_emoji
