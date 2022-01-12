@@ -48,17 +48,7 @@ def scrape():
 		uc_col = columns[9] #check exact function here
 
 		country = flag_col.img.get('alt').lower()
-		#handle unknown locations
-		if country == "--":
-			flag_emoji = ":pirate_flag:"
-		elif country == "x1":
-			flag_emoji = ":england:"
-		elif country == "x2":
-			flag_emoji = ":scotland:"
-		elif country == "x3":
-			flag_emoji = ":wales:"
-		else:
-			flag_emoji = ":flag_" + country + ":"
+		flag_emoji = get_flag_emoji(country)
 		
 		user_name = name_col.a.get_text()
 		user_link = name_col.a['href']
@@ -120,3 +110,18 @@ def scrape():
 	f.close()
 	
 	return results
+
+def get_flag_emoji(country_code):
+	#Cyberscore flag codes don't exactly match Discord emoji codes
+	#Mainly with "Unknown", and dependencies/constituent countries
+	#So we hard code handling for those
+	if country == "--":
+		flag_emoji = ":pirate_flag:"
+	elif country == "x1":
+		flag_emoji = ":england:"
+	elif country == "x2":
+		flag_emoji = ":scotland:"
+	elif country == "x3":
+		flag_emoji = ":wales:"
+	else:
+		flag_emoji = ":flag_" + country + ":"
