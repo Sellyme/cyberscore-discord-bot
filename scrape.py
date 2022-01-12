@@ -59,10 +59,17 @@ def scrape():
 		game = "["+game_name+"]("+CS_PREFIX+game_link+")"
 		
 		chart_links = list(chart_col.find_all('a'))
-		group_name = chart_links[0].get_text()
-		chart_name = chart_links[1].get_text()
-		chart_link = chart_col.find_all('a')[1]['href']
-		chart = "["+group_name + " → " + chart_name+"]("+CS_PREFIX+chart_link+")"
+		#group names don't exist for all charts, so we need to check chart_links length
+		#and only construct group name if > 1
+		if(len(chart_links) > 1):
+			group_name = chart_links[0].get_text()
+			chart_name = chart_links[1].get_text()
+			chart_link = chart_col.find_all('a')[1]['href']
+			chart = "["+group_name + " → " + chart_name+"]("+CS_PREFIX+chart_link+")"
+		else:
+			chart_name = chart_links[0].get_text()
+			chart_link = chart_col.a['href']
+			chart = "["+chart_name+"]("+CS_PREFIX+chart_link+")"
 		
 		score_value = score_col.a.get_text()
 		score_link = score_col.a['href']
@@ -101,7 +108,7 @@ def scrape():
 
 		#construct string
 		output = flag_emoji + " " + user + " just scored " + score
-		output += " (Pos: **" + pos + "** " + medal + " - " + csr+")\n"
+		output += " (Pos: **" + pos + "** " + medal + " · " + csr+")\n"
 		output += game + " → " + chart
 		output += comment #if the comment exists it will appear italicised on a new line
 		
