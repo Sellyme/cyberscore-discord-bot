@@ -41,11 +41,11 @@ def scrape():
 		game_col = columns[2]
 		chart_col = columns[3]
 		score_col = columns[4]
-		#col 5 is the star image
+		medal_col = columns[5]
 		pos_col = columns[6]
-		#col 7 is the chart type image
+		type_col = columns[7]
 		award_col = columns[8]
-		#col 9 is empty
+		uc_col = columns[9] #check exact function here
 
 		country = flag_col.img.get('alt')
 		#handle unknown locations
@@ -72,6 +72,21 @@ def scrape():
 		score_link = score_col.a['href']
 		score = "["+score_value+"]("+CS_PREFIX+score_link+")"
 		
+		if medal_col.img:
+			medal_name = medal_col.img['title']
+			if medal_name == "Platinum":
+				medal = "<:plat:930611250809958501>"
+			elif medal_name == "Gold":
+				medal = "<:gold:930611304727740487>"
+			elif medal_name == "Silver":
+				medal = "<:silver:930611349267054702>"
+			elif medal_name == "Bronze":
+				medal = "<:bronze:930611393198190652>"
+			else:
+				medal = ""
+		else:
+			medal = ""
+		
 		pos = pos_col.get_text().replace(" ","")
 		csr = award_col.strong
 		#csr is not displayed for UC charts, so display Challenge Points instead
@@ -82,7 +97,7 @@ def scrape():
 
 		#construct string
 		output = flag_emoji + " " + user + " just scored " + score
-		output += " (Pos: **" + pos + "** - " + csr+")\n"
+		output += " (Pos: **" + pos + "** " + medal + " - " + csr+")\n"
 		output += game + " → " + chart
 
 		
