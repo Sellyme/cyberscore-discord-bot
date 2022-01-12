@@ -13,7 +13,7 @@ client = discord.Client()
 
 @client.event
 async def on_ready():
-	print(client.user, " has connected to Discord!")
+	print(client.user, "has connected to Discord!")
 
 	await scrape_latest()
 

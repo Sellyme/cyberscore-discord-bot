@@ -67,6 +67,14 @@ def scrape():
 		score_value = score_col.a.get_text()
 		score_link = score_col.a['href']
 		score = "["+score_value+"]("+CS_PREFIX+score_link+")"
+
+		if score_col.img:
+			#this is only mildly sanitised, so users can break visual formatting
+			#(e.g., underlines, bold, italics, strikethrough)
+			#but escaping the embed should not be possible
+			comment = "\n*"+score_col.img['title']+"*"
+		else:
+			comment = ""
 		
 		if medal_col.img:
 			medal_name = medal_col.img['title']
@@ -95,7 +103,7 @@ def scrape():
 		output = flag_emoji + " " + user + " just scored " + score
 		output += " (Pos: **" + pos + "** " + medal + " - " + csr+")\n"
 		output += game + " → " + chart
-
+		output += comment #if the comment exists it will appear italicised on a new line
 		
 		results.append(output)
 
