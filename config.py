@@ -1,5 +1,6 @@
 test_channel = 930473063043178586
-rss_channel = 930586269237530654
+submissions_channel = 930586269237530654
+leaderboard_channel = 930981438638133269
 
 #all frequencies are in seconds
 submissions_frequency = 120 #frequency to scrape the latest submissions page

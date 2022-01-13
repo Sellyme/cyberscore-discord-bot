@@ -20,7 +20,7 @@ async def on_ready():
 	loop.create_task(scrape_leaderboard())
 
 async def scrape_latest():
-	channel = client.get_channel(config.rss_channel)
+	channel = client.get_channel(config.submissions_channel)
 	while True:
 		results = scrape.scrape_latest()
 		for msg in results:
@@ -34,7 +34,7 @@ async def scrape_latest():
 
 async def scrape_leaderboard():
 	print("Running leaderboard scrape")
-	channel = client.get_channel(config.test_channel)
+	channel = client.get_channel(config.leaderboard_channel)
 	while True:
 		results = scrape.scrape_leaderboard()
 		#result should be a pure string

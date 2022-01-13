@@ -170,7 +170,7 @@ def scrape_leaderboard():
 			pos_change = user_data['pos'] - (i+1)
 			csr_change = user_data['csr'] - csr
 			
-			#for alignment we're using U+2800 braille  spaces - "⠀" for non-pos changes
+			#for alignment we're using U+2800 braille spaces - "⠀" for non-pos changes
 			#and U+200A hair spaces - " " for pos changes
 			#this aligns better than anything else Discord will indent with
 
