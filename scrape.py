@@ -116,7 +116,7 @@ def scrape_latest():
 		results.append(output)
 
 	#once we've iterated over everything we can save the last update date
-	if(new_update > last_update):
+	if new_update > last_update:
 		f.seek(0)
 		f.write(new_update)
 		f.truncate()

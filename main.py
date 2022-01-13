@@ -5,6 +5,7 @@ import asyncio
 
 import scrape
 import config
+import datetime
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -33,20 +34,28 @@ async def scrape_latest():
 		await asyncio.sleep(config.submissions_frequency)
 
 async def scrape_leaderboard():
-	print("Running leaderboard scrape")
+	hours_checked = 0
 	channel = client.get_channel(config.leaderboard_channel)
 	while True:
-		results = scrape.scrape_leaderboard()
-		#result should be a pure string
-		print(results)
+		#we want the leaderboard scrape to only run around midnight UTC, so init a datetime
+		now = datetime.datetime.utcnow()
+		#and then check that it's 12:xx am (or if we've missed a cycle somehow)
+		if(now.hour==0 or hours_checked>=24):
+			print("Running leaderboard scrape")
+			results = scrape.scrape_leaderboard()
+			#result should be a pure string
+			print(results)
+			
+			#create embed for Discord
+			#todo - decide if we want 3 leaderboards in one embed, or 3 separate embeds w/o title
+			embed = discord.Embed(title="Leaderboards")
+			embed.add_field(name="Mainboard", value=results)
+			await channel.send(embed=embed)
+			hours_checked = 0
+		else:
+			hours_checked += 1
 		
-		#create embed for Discord
-		#todo - decide if we want 3 leaderboards in one embed, or 3 separate embeds w/o title
-		embed = discord.Embed(title="Leaderboards")
-		embed.add_field(name="Mainboard", value=results)
-		await channel.send(embed=embed)
-		
-		#and only run this every 24 hours
+		#and re-check hourly
 		await asyncio.sleep(config.leaderboard_frequency)
 
 client.run(TOKEN)
