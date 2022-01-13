@@ -87,13 +87,13 @@ def scrape_latest():
 		if medal_col.img:
 			medal_name = medal_col.img['title']
 			if medal_name == "Platinum":
-				medal = "<:plat:930611250809958501>"
+				medal = " <:plat:930611250809958501>"
 			elif medal_name == "Gold":
-				medal = "<:gold:930611304727740487>"
+				medal = " <:gold:930611304727740487>"
 			elif medal_name == "Silver":
-				medal = "<:silver:930611349267054702>"
+				medal = " <:silver:930611349267054702>"
 			elif medal_name == "Bronze":
-				medal = "<:bronze:930611393198190652>"
+				medal = " <:bronze:930611393198190652>"
 			else:
 				medal = ""
 		else:
@@ -109,7 +109,7 @@ def scrape_latest():
 
 		#construct string
 		output = flag_emoji + " " + user + " just scored " + score
-		output += " (Pos: **" + pos + "** " + medal + " · " + csr+")\n"
+		output += " (Pos: **" + pos + "**" + medal + " · " + csr+")\n"
 		output += game + " → " + chart
 		output += comment #if the comment exists it will appear italicised on a new line
 		
@@ -168,7 +168,7 @@ def scrape_leaderboard():
 		if user_name in previous_update:
 			user_data = previous_update[user_name]
 			pos_change = user_data['pos'] - (i+1)
-			csr_change = user_data['csr'] - csr
+			csr_change = csr - user_data['csr']
 			
 			#for alignment we're using U+2800 braille spaces - "⠀" for non-pos changes
 			#and U+200A hair spaces - " " for pos changes
