@@ -129,6 +129,10 @@ def scrape_latest():
 
 def scrape_leaderboard():
 	URL = "https://cyberscore.me.uk/scoreboard.php"
+	
+	#open previous leaderboard data
+	f = open("mainboard.csv", "r+")
+	previous_update = load_leaderboard(f)
 
 	#perform web scrape
 	page = requests.get(URL)
@@ -158,13 +162,46 @@ def scrape_leaderboard():
 		
 		csr_raw = player.find(class_="scoreboardCSR").get_text().strip()
 		#todo - strip the " CSR" for calculation/saving
+		csr = float(csr_raw.rstrip(" CSR").replace(",",""))
 		
-		#todo - save and check position changes
-		pos_change = "    " #four spaces if no change, ▼▲ symbols otherwise
+		#check position changes using the read file data
+		if user_name in previous_update:
+			user_data = previous_update[user_name]
+			pos_change = user_data['pos'] - (i+1)
+			csr_change = user_data['csr'] - csr
+			
+			#for alignment we're using U+2800 braille  spaces - "⠀" for non-pos changes
+			#and U+200A hair spaces - " " for pos changes
+			#this aligns better than anything else Discord will indent with
+
+			if pos_change == 0:
+				pos_change_str = "⠀"*3
+			elif pos_change > 0:
+				pos_change_str = "▲"+str(pos_change)+(" "*8)
+			else:
+				pos_change_str = "▼"+str(abs(pos_change))+(" "*8)
+			
+			if csr_change == 0:
+				csr_change_str = ""
+			elif csr_change > 0:
+				csr_change_str = " (+{:.2f})".format(abs(csr_change))
+			else:
+				csr_change_str = " (-{:.2f})".format(abs(csr_change))
+		else:
+			pos_change_str = ":new:"+(" "*8)
+			csr_change_str = ""
+
 		
 		#todo - if the user is in the top three, use a medal instead of position
-		output += pos_change + str(i+1) + ". ["+user_name+"]("+CS_PREFIX+user_link+") ("+csr_raw+")\n"
-	
+		output += pos_change_str + str(i+1) + ". "
+		output += "["+user_name+"]("+CS_PREFIX+user_link+") - "
+		output += csr_raw+csr_change_str+"\n"
+		
+		save_data += str(i+1) + "," + user_name + "," + '{:.2f}'.format(csr) + "\n"
+
+	save_leaderboard(save_data, f)
+	f.close()
+
 	return output
 
 def get_flag_emoji(country_code):
@@ -182,3 +219,25 @@ def get_flag_emoji(country_code):
 	else:
 		flag_emoji = ":flag_" + country_code + ":"
 	return flag_emoji
+
+#file is an actual file hook, *not* a path
+def load_leaderboard(file):
+	data = {}
+
+	line = file.readline()
+	while line:
+		player = line.split(",")
+		pos = int(player[0])
+		name = player[1]
+		csr = float(player[2])
+		data[name] = {"pos": pos, "csr": csr}
+		line = file.readline()
+	
+	return data
+
+#file is an actual file hook, *not* a path
+def save_leaderboard(save_data, file):
+	file.seek(0)
+	file.write(save_data)
+	file.truncate()
+	return

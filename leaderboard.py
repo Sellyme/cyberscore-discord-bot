@@ -23,7 +23,8 @@ async def scrape_leaderboard():
 		print(results)
 		
 		#create embed for Discord
-		embed = discord.Embed(description=results)
+		embed = discord.Embed(title="Leaderboards")
+		embed.add_field(name="Mainboard", value=results)
 		await channel.send(embed=embed)
 		
 		#and only run this every 24 hours
