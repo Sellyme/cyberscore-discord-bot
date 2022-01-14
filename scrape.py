@@ -127,11 +127,20 @@ def scrape_latest():
 	
 	return results
 
-def scrape_leaderboard():
-	URL = "https://cyberscore.me.uk/scoreboard.php"
+#force indicates whether it was a forced update by a user, or a daily check
+def scrape_leaderboard(type, force):
 	
 	#open previous leaderboard data
-	f = open("mainboard.csv", "r+")
+	if type == "mainboard":
+		URL = "https://cyberscore.me.uk/scoreboard.php"
+		f = open("mainboard.csv", "r+")
+	elif type == "arcade":
+		URL = "https://cyberscore.me.uk/scoreboard.php?board=8"
+		f = open("arcade.csv", "r+")
+	elif type == "solution":
+		URL = "https://cyberscore.me.uk/scoreboard.php?board=13"
+		f = open("solution.csv", "r+")
+
 	previous_update = load_leaderboard(f)
 
 	#perform web scrape
@@ -160,15 +169,22 @@ def scrape_leaderboard():
 			user_name = user
 		user_link = user_cell["href"]
 		
-		csr_raw = player.find(class_="scoreboardCSR").get_text().strip()
-		#todo - strip the " CSR" for calculation/saving
-		csr = float(csr_raw.rstrip(" CSR").replace(",",""))
+		#note that despite the class name "scoreboardCSR"
+		#this is actually still correct for arcade/solution
+		score_raw = player.find(class_="scoreboardCSR").get_text().strip()
+		#strip the text denoting the score type
+		if type == "mainboard":
+			score = float(score_raw.rstrip(" CSR").replace(",",""))
+		elif type == "arcade":
+			score = int(score_raw.rstrip(" Tokens").replace(",",""))
+		elif type == "solution":
+			score = int(score_raw.rstrip(" Brain Power").replace(",",""))
 		
 		#check position changes using the read file data
 		if user_name in previous_update:
 			user_data = previous_update[user_name]
 			pos_change = user_data['pos'] - (i+1)
-			csr_change = csr - user_data['csr']
+			score_change = score - user_data['score']
 			
 			#for alignment we're using U+2800 braille spaces - "⠀" for non-pos changes
 			#and U+200A hair spaces - " " for pos changes
@@ -180,24 +196,39 @@ def scrape_leaderboard():
 				pos_change_str = "▲"+str(pos_change)+(" "*8)
 			else:
 				pos_change_str = "▼"+str(abs(pos_change))+(" "*8)
-			
-			if csr_change == 0:
-				csr_change_str = ""
-			elif csr_change > 0:
-				csr_change_str = " (+{:.2f})".format(abs(csr_change))
+
+			if score_change == 0:
+				score_change_str = ""
 			else:
-				csr_change_str = " (-{:.2f})".format(abs(csr_change))
+				score_change_str = " ({:+,.2f})".format(abs(score_change))
 		else:
 			pos_change_str = ":new:"+(" "*8)
-			csr_change_str = ""
+			score_change = 0
 
-		
+		#mainboard requires decimal formatting for output, other boards are integers
+		if type == "mainboard":
+			score_str = "{:,.2f}".format(score)
+			if score_change:
+				score_change_str = " ({:+,.2f})".format(abs(score_change))
+			else:
+				score_change_str = ""
+		else:
+			#score is stored as a float to support CSR
+			#but other boards have integer scores, so we convert to that for representation
+			score_change = int(score_change)
+			score_str = "{:,}".format(score)
+
+			if score_change:
+				score_change_str = " ({:+,})".format(abs(score_change))
+			else:
+				score_change_str = ""
+
 		#todo - if the user is in the top three, use a medal instead of position
 		output += pos_change_str + str(i+1) + ". "
 		output += "["+user_name+"]("+CS_PREFIX+user_link+") - "
-		output += csr_raw+csr_change_str+"\n"
+		output += score_raw+score_change_str+"\n"
 		
-		save_data += str(i+1) + "," + user_name + "," + '{:.2f}'.format(csr) + "\n"
+		save_data += str(i+1) + "," + user_name + "," + score_str + "\n"
 
 	save_leaderboard(save_data, f)
 	f.close()
@@ -229,8 +260,8 @@ def load_leaderboard(file):
 		player = line.split(",")
 		pos = int(player[0])
 		name = player[1]
-		csr = float(player[2])
-		data[name] = {"pos": pos, "csr": csr}
+		score = float(player[2]) #only a float for some boards
+		data[name] = {"pos": pos, "score": score}
 		line = file.readline()
 	
 	return data
