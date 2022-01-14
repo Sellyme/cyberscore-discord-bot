@@ -230,7 +230,10 @@ def scrape_leaderboard(type, force):
 		
 		save_data += str(i+1) + "," + user_name + "," + score_str + "\n"
 
-	save_leaderboard(save_data, f)
+	#only save the data if we did a daily update, so that score diffs are always relative
+	#to midnight UTC that day, and can't be disrupted by debugging
+	if(not force):
+		save_leaderboard(save_data, f)
 	f.close()
 
 	return output

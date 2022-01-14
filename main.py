@@ -18,7 +18,7 @@ async def on_ready():
 
 	loop = asyncio.get_event_loop()
 	loop.create_task(scrape_latest())
-	loop.create_task(scrape_leaderboard())
+	loop.create_task(scrape_leaderboards())
 
 async def scrape_latest():
 	channel = client.get_channel(config.submissions_channel)
@@ -33,30 +33,42 @@ async def scrape_latest():
 		
 		await asyncio.sleep(config.submissions_frequency)
 
-async def scrape_leaderboard(force = False):
+async def scrape_leaderboards():
 	hours_checked = 0
-	channel = client.get_channel(config.leaderboard_channel)
+	
 	while True:
 		#we want the leaderboard scrape to only run around midnight UTC, so init a datetime
 		now = datetime.datetime.utcnow()
 		#and then check that it's 12:xx am (or if we've missed a cycle somehow)
-		if(now.hour==0 or hours_checked>=24 or force):
+		if(now.hour==0 or hours_checked>=24):
 			print("Running leaderboard scrape")
-			results = scrape.scrape_leaderboard(force)
-			#result should be a pure string
-			print(results)
-			
-			#create embed for Discord
-			#todo - decide if we want 3 leaderboards in one embed, or 3 separate embeds w/o title
-			embed = discord.Embed(title="Leaderboards")
-			embed.add_field(name="Mainboard", value=results)
-			await channel.send(embed=embed)
+
+			await scrape_leaderboard("mainboard")
+			await scrape_leaderboard("arcade")
+			await scrape_leaderboard("solution")
+
+			#reset 24hr timer
 			hours_checked = 0
 		else:
 			hours_checked += 1
-		
+
 		#and re-check hourly
 		await asyncio.sleep(config.leaderboard_frequency)
+		
+
+async def scrape_leaderboard(type, force = False):
+	channel = client.get_channel(config.leaderboard_channel)
+
+	results = scrape.scrape_leaderboard(type, force)
+	#result should be a pure string
+	print(results)
+
+	#create embed for Discord
+	#todo - decide if we want 3 leaderboards in one embed, or 3 separate embeds w/o title
+	embed = discord.Embed(title="Leaderboards")
+	embed.add_field(name="Mainboard", value=results)
+	await channel.send(embed=embed)
+
 
 @client.event
 async def on_message(message):
@@ -67,11 +79,11 @@ async def on_message(message):
 	#it's mostly for debugging purposes
 	channel = client.get_channel(config.leaderboard_channel)
 	if message.content == "!mainboard":
-		await scrape_leaderboard(True)
+		await scrape_leaderboard("mainboard", True)
 	elif message.content == "!arcade":
-		await channel.send("Feature not yet live")
+		await scrape_leaderboard("arcade", True)
 	elif message.content == "!solution":
-		await channel.send("Feature not yet live")
+		await scrape_leaderboard("solution", True)
 	elif message.content == "!rainbow":
 		await channel.send("Feature not yet live")
 
