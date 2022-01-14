@@ -133,13 +133,13 @@ def scrape_leaderboard(type, force):
 	#open previous leaderboard data
 	if type == "mainboard":
 		URL = "https://cyberscore.me.uk/scoreboard.php"
-		f = open("mainboard.csv", "r+")
+		f = open("leaderboards/mainboard.csv", "r+")
 	elif type == "arcade":
 		URL = "https://cyberscore.me.uk/scoreboard.php?board=8"
-		f = open("arcade.csv", "r+")
+		f = open("leaderboards/arcade.csv", "r+")
 	elif type == "solution":
 		URL = "https://cyberscore.me.uk/scoreboard.php?board=13"
-		f = open("solution.csv", "r+")
+		f = open("leaderboards/solution.csv", "r+")
 
 	previous_update = load_leaderboard(f)
 

@@ -72,7 +72,7 @@ async def scrape_leaderboard(type, force = False):
 
 @client.event
 async def on_message(message):
-	if message.author.discriminator != "1963" or message.author.name != "Sellyme":
+	if message.author.discriminator != config.bot_owner_discriminator or message.author.name != config.bot_owner_name:
 		return
 
 	#this block handles messages from the bot author that force update leaderboards
