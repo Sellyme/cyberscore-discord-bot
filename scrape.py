@@ -238,6 +238,30 @@ def scrape_leaderboard(type, force):
 
 	return output
 
+def scrape_top_submitters():
+	URL = "https://cyberscore.me.uk/latest_subs_stats.php?days=1&updates=no"
+
+	#perform web scrape
+	page = requests.get(URL)
+	soup = BeautifulSoup(page.content, "html.parser")
+	players = list(soup.find(id="pageright").find("table").find_all("tr"))
+	
+	#iterate over the top 10
+	i = 0
+	output = ""
+	while i < 10:
+		player = players[i]
+		cells = list(player.find_all("td"))
+		
+		user_name = cells[0].get_text().strip()
+		user_link = cells[0].a['href']
+		user_score = cells[1].get_text().strip()
+
+		output += "["+user_name+"]("+CS_PREFIX+user_link+")" + " - " + user_score + " submissions\n"
+		i+=1
+	return output
+	
+
 def get_flag_emoji(country_code):
 	#Cyberscore flag codes don't exactly match Discord emoji codes
 	#Mainly with "Unknown", and dependencies/constituent countries

@@ -46,6 +46,7 @@ async def scrape_leaderboards():
 			await scrape_leaderboard("Mainboard")
 			await scrape_leaderboard("Arcade")
 			await scrape_leaderboard("Solution")
+			await top_submitters()
 
 			#reset 24hr timer
 			hours_checked = 0
@@ -68,6 +69,17 @@ async def scrape_leaderboard(type, force = False):
 	embed.add_field(name=type, value=results)
 	await channel.send(embed=embed)
 
+async def top_submitters():
+	channel = client.get_channel(config.leaderboard_channel)
+	
+	results = scrape.scrape_top_submitters()
+	#result should be a pure string
+	print(results)
+	
+	#create embed for Discord
+	embed = discord.Embed()
+	embed.add_field(name="Top Submitters for Today", value=results)
+	await channel.send(embed=embed)
 
 @client.event
 async def on_message(message):
@@ -85,5 +97,7 @@ async def on_message(message):
 		await scrape_leaderboard("Solution", True)
 	elif message.content == "!rainbow":
 		await channel.send("Feature not yet live")
+	elif message.content == "!submitters":
+		await top_submitters()
 
 client.run(TOKEN)
