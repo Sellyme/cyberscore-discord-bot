@@ -228,7 +228,7 @@ def scrape_leaderboard(type, force):
 		output += "["+user_name+"]("+CS_PREFIX+user_link+") - "
 		output += score_raw+score_change_str+"\n"
 		
-		save_data += str(i+1) + "," + user_name + "," + score_str + "\n"
+		save_data += str(i+1) + "," + user_name + "," + score_str.replace(",","") + "\n"
 
 	#only save the data if we did a daily update, so that score diffs are always relative
 	#to midnight UTC that day, and can't be disrupted by debugging
