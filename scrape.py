@@ -249,7 +249,7 @@ def scrape_top_submitters():
 	#iterate over the top 10
 	i = 0
 	output = ""
-	while i < 10:
+	while i < min(10, len(players)):
 		player = players[i]
 		cells = list(player.find_all("td"))
 		
