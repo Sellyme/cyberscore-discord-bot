@@ -64,8 +64,7 @@ async def scrape_leaderboard(type, force = False):
 	print(results)
 
 	#create embed for Discord
-	#todo - decide if we want 3 leaderboards in one embed, or 3 separate embeds w/o title
-	embed = discord.Embed(title="Leaderboards")
+	embed = discord.Embed()
 	embed.add_field(name=type, value=results)
 	await channel.send(embed=embed)
 
