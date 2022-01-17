@@ -131,13 +131,13 @@ def scrape_latest():
 def scrape_leaderboard(type, force):
 	
 	#open previous leaderboard data
-	if type == "mainboard":
+	if type == "Mainboard":
 		URL = "https://cyberscore.me.uk/scoreboard.php"
 		f = open("leaderboards/mainboard.csv", "r+")
-	elif type == "arcade":
+	elif type == "Arcade":
 		URL = "https://cyberscore.me.uk/scoreboard.php?board=8"
 		f = open("leaderboards/arcade.csv", "r+")
-	elif type == "solution":
+	elif type == "Solution":
 		URL = "https://cyberscore.me.uk/scoreboard.php?board=13"
 		f = open("leaderboards/solution.csv", "r+")
 
@@ -173,11 +173,11 @@ def scrape_leaderboard(type, force):
 		#this is actually still correct for arcade/solution
 		score_raw = player.find(class_="scoreboardCSR").get_text().strip()
 		#strip the text denoting the score type
-		if type == "mainboard":
+		if type == "Mainboard":
 			score = float(score_raw.rstrip(" CSR").replace(",",""))
-		elif type == "arcade":
+		elif type == "Arcade":
 			score = int(score_raw.rstrip(" Tokens").replace(",",""))
-		elif type == "solution":
+		elif type == "Solution":
 			score = int(score_raw.rstrip(" Brain Power").replace(",",""))
 		
 		#check position changes using the read file data
@@ -206,7 +206,7 @@ def scrape_leaderboard(type, force):
 			score_change = 0
 
 		#mainboard requires decimal formatting for output, other boards are integers
-		if type == "mainboard":
+		if type == "Mainboard":
 			score_str = "{:,.2f}".format(score)
 			if score_change:
 				score_change_str = " ({:+,.2f})".format(abs(score_change))

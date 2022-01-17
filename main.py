@@ -43,9 +43,9 @@ async def scrape_leaderboards():
 		if(now.hour==0 or hours_checked>=24):
 			print("Running leaderboard scrape")
 
-			await scrape_leaderboard("mainboard")
-			await scrape_leaderboard("arcade")
-			await scrape_leaderboard("solution")
+			await scrape_leaderboard("Mainboard")
+			await scrape_leaderboard("Arcade")
+			await scrape_leaderboard("Solution")
 
 			#reset 24hr timer
 			hours_checked = 0
@@ -66,7 +66,7 @@ async def scrape_leaderboard(type, force = False):
 	#create embed for Discord
 	#todo - decide if we want 3 leaderboards in one embed, or 3 separate embeds w/o title
 	embed = discord.Embed(title="Leaderboards")
-	embed.add_field(name="Mainboard", value=results)
+	embed.add_field(name=type, value=results)
 	await channel.send(embed=embed)
 
 
@@ -79,11 +79,11 @@ async def on_message(message):
 	#it's mostly for debugging purposes
 	channel = client.get_channel(config.leaderboard_channel)
 	if message.content == "!mainboard":
-		await scrape_leaderboard("mainboard", True)
+		await scrape_leaderboard("Mainboard", True)
 	elif message.content == "!arcade":
-		await scrape_leaderboard("arcade", True)
+		await scrape_leaderboard("Arcade", True)
 	elif message.content == "!solution":
-		await scrape_leaderboard("solution", True)
+		await scrape_leaderboard("Solution", True)
 	elif message.content == "!rainbow":
 		await channel.send("Feature not yet live")
 
