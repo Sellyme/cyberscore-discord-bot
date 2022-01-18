@@ -70,16 +70,22 @@ async def scrape_leaderboard(type, force = False):
 	embed.timestamp = datetime.datetime.utcnow()
 	await channel.send(embed=embed)
 
-async def top_submitters():
+async def top_submitters(days):
 	channel = client.get_channel(config.leaderboard_channel)
 	
-	results = scrape.scrape_top_submitters()
+	results = scrape.scrape_top_submitters(days)
 	#result should be a pure string
 	print(results)
 	
+	#generate embed header
+	if days == 1:
+		fieldname = "Top submitters for today"
+	else:
+		fieldname = "Top submitters for the last " + str(days) + " days"
+	
 	#create embed for Discord
 	embed = discord.Embed()
-	embed.add_field(name="Top Submitters for Today", value=results)
+	embed.add_field(name=fieldname, value=results)
 	embed.timestamp = datetime.datetime.utcnow()
 	await channel.send(embed=embed)
 
@@ -99,7 +105,15 @@ async def on_message(message):
 		await scrape_leaderboard("Solution", True)
 	elif message.content == "!rainbow":
 		await channel.send("Feature not yet live")
-	elif message.content == "!submitters":
-		await top_submitters()
+	elif message.content.startswith("!submitters"):
+		days = 1 #default parameter
+		if len(message.content) > 11:
+			#if there was a parameter added and we can parse that
+			daysParam = message.content.lstrip("!submitters ")
+			if daysParam.isnumeric():
+				#isnumeric excludes negatives or decimals, which is good for this use case
+				days = int(daysParam)
+
+		await top_submitters(days)
 
 client.run(TOKEN)
