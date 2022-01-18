@@ -67,6 +67,7 @@ async def scrape_leaderboard(type, force = False):
 	#create embed for Discord
 	embed = discord.Embed()
 	embed.add_field(name=type, value=results)
+	embed.timestamp = datetime.datetime.utcnow()
 	await channel.send(embed=embed)
 
 async def top_submitters():
@@ -79,6 +80,7 @@ async def top_submitters():
 	#create embed for Discord
 	embed = discord.Embed()
 	embed.add_field(name="Top Submitters for Today", value=results)
+	embed.timestamp = datetime.datetime.utcnow()
 	await channel.send(embed=embed)
 
 @client.event
