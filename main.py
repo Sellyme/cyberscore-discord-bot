@@ -46,7 +46,7 @@ async def scrape_leaderboards():
 			await scrape_leaderboard("Mainboard")
 			await scrape_leaderboard("Arcade")
 			await scrape_leaderboard("Solution")
-			await top_submitters()
+			await top_submitters(1)
 
 			#reset 24hr timer
 			hours_checked = 0
@@ -57,8 +57,8 @@ async def scrape_leaderboards():
 		await asyncio.sleep(config.leaderboard_frequency)
 		
 
-async def scrape_leaderboard(type, force = False):
-	channel = client.get_channel(config.leaderboard_channel)
+async def scrape_leaderboard(type, force = False, channel_id = config.leaderboard_channel):
+	channel = client.get_channel(channel_id)
 
 	results = scrape.scrape_leaderboard(type, force)
 	#result should be a pure string
@@ -70,8 +70,8 @@ async def scrape_leaderboard(type, force = False):
 	embed.timestamp = datetime.datetime.utcnow()
 	await channel.send(embed=embed)
 
-async def top_submitters(days):
-	channel = client.get_channel(config.leaderboard_channel)
+async def top_submitters(days = 1, channel_id = config.leaderboard_channel):
+	channel = client.get_channel(channel_id)
 	
 	results = scrape.scrape_top_submitters(days)
 	#result should be a pure string
@@ -91,18 +91,18 @@ async def top_submitters(days):
 
 @client.event
 async def on_message(message):
-	if message.author.discriminator != config.bot_owner_discriminator or message.author.name != config.bot_owner_name:
+	#ignore messages from bots to avoid double-posting on PluralKit etc.
+	if(message.author.bot):
 		return
 
-	#this block handles messages from the bot author that force update leaderboards
-	#it's mostly for debugging purposes
-	channel = client.get_channel(config.leaderboard_channel)
+
+	channel = message.channel
 	if message.content == "!mainboard":
-		await scrape_leaderboard("Mainboard", True)
+		await scrape_leaderboard("Mainboard", True, channel.id)
 	elif message.content == "!arcade":
-		await scrape_leaderboard("Arcade", True)
+		await scrape_leaderboard("Arcade", True, channel.id)
 	elif message.content == "!solution":
-		await scrape_leaderboard("Solution", True)
+		await scrape_leaderboard("Solution", True, channel.id)
 	elif message.content == "!rainbow":
 		await channel.send("Feature not yet live")
 	elif message.content.startswith("!submitters"):
@@ -114,6 +114,6 @@ async def on_message(message):
 				#isnumeric excludes negatives or decimals, which is good for this use case
 				days = int(daysParam)
 
-		await top_submitters(days)
+		await top_submitters(days, channel.id)
 
 client.run(TOKEN)

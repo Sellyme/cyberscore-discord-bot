@@ -238,8 +238,8 @@ def scrape_leaderboard(type, force):
 
 	return output
 
-def scrape_top_submitters():
-	URL = "https://cyberscore.me.uk/latest_subs_stats.php?days=1&updates=no"
+def scrape_top_submitters(days):
+	URL = "https://cyberscore.me.uk/latest_subs_stats.php?updates=no&days=" + str(days)
 
 	#perform web scrape
 	page = requests.get(URL)
