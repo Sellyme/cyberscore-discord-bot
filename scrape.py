@@ -196,11 +196,6 @@ def scrape_leaderboard(type, force):
 				pos_change_str = "▲"+str(pos_change)+(" "*8)
 			else:
 				pos_change_str = "▼"+str(abs(pos_change))+(" "*8)
-
-			if score_change == 0:
-				score_change_str = ""
-			else:
-				score_change_str = " ({:+,.2f})".format(abs(score_change))
 		else:
 			pos_change_str = ":new:"+(" "*8)
 			score_change = 0
@@ -209,7 +204,7 @@ def scrape_leaderboard(type, force):
 		if type == "Mainboard":
 			score_str = "{:,.2f}".format(score)
 			if score_change:
-				score_change_str = " ({:+,.2f})".format(abs(score_change))
+				score_change_str = " ({:+,.2f})".format(score_change)
 			else:
 				score_change_str = ""
 		else:
@@ -219,7 +214,7 @@ def scrape_leaderboard(type, force):
 			score_str = "{:,}".format(score)
 
 			if score_change:
-				score_change_str = " ({:+,})".format(abs(score_change))
+				score_change_str = " ({:+,})".format(score_change)
 			else:
 				score_change_str = ""
 
