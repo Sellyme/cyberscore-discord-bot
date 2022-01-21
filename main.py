@@ -5,7 +5,7 @@ import asyncio
 
 import scrape
 import config
-import datetime
+from datetime import datetime, timedelta
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -34,13 +34,17 @@ async def scrape_latest():
 		await asyncio.sleep(config.submissions_frequency)
 
 async def scrape_leaderboards():
-	hours_checked = 0
-	
 	while True:
+		f = open("last_leaderboards", "r+")
+		last_scrape = f.read()
+		last_scrape_dt = datetime.strptime(last_scrape, "%Y-%m-%d %H:%M:%S")
+		next_scrape = last_scrape_dt + timedelta(1)
+	
+		print("Checking leaderboard scrape")
 		#we want the leaderboard scrape to only run around midnight UTC, so init a datetime
-		now = datetime.datetime.utcnow()
+		now = datetime.utcnow()
 		#and then check that it's 12:xx am (or if we've missed a cycle somehow)
-		if(now.hour==0 or hours_checked>=24):
+		if(now.hour == 0 or next_scrape < now):
 			print("Running leaderboard scrape")
 
 			await scrape_leaderboard("Mainboard")
@@ -48,10 +52,12 @@ async def scrape_leaderboards():
 			await scrape_leaderboard("Solution")
 			await top_submitters(1)
 
-			#reset 24hr timer
-			hours_checked = 0
-		else:
-			hours_checked += 1
+			#save the most recent scrape
+			f.seek(0)
+			f.write(now.strftime("%Y-%m-%d %H:%M:%S"))
+			f.truncate()
+
+		f.close()
 
 		#and re-check hourly
 		await asyncio.sleep(config.leaderboard_frequency)
@@ -67,7 +73,7 @@ async def scrape_leaderboard(type, force = False, channel_id = config.leaderboar
 	#create embed for Discord
 	embed = discord.Embed()
 	embed.add_field(name=type, value=results)
-	embed.timestamp = datetime.datetime.utcnow()
+	embed.timestamp = datetime.utcnow()
 	await channel.send(embed=embed)
 
 async def top_submitters(days = 1, channel_id = config.leaderboard_channel):
@@ -86,7 +92,7 @@ async def top_submitters(days = 1, channel_id = config.leaderboard_channel):
 	#create embed for Discord
 	embed = discord.Embed()
 	embed.add_field(name=fieldname, value=results)
-	embed.timestamp = datetime.datetime.utcnow()
+	embed.timestamp = datetime.utcnow()
 	await channel.send(embed=embed)
 
 @client.event
