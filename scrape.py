@@ -8,7 +8,8 @@ last_update_time = 0 #todo - set this to startup or a saved time
 
 def scrape_latest():
 	URL = "https://cyberscore.me.uk/latest_subs.php"
-	results = []
+	cs_results = [] #messages to output to Cyberscore Discord
+	ps_results = [] #messages to output to New Pokemon Snap Discord
 
 	#perform web scrape
 	page = requests.get(URL)
@@ -113,7 +114,11 @@ def scrape_latest():
 		output += game + " → " + chart
 		output += comment #if the comment exists it will appear italicised on a new line
 		
-		results.append(output)
+		cs_results.append(output)
+		#if this is for New Pokemon Snap, output to that as well
+		if game_link == "/game/2785":
+			ps_results.append(output)
+		
 
 	#once we've iterated over everything we can save the last update date
 	if new_update > last_update:
@@ -125,7 +130,7 @@ def scrape_latest():
 		print(now.strftime("%H:%M:%S"), "no updates")
 	f.close()
 	
-	return results
+	return [cs_results, ps_results]
 
 #force indicates whether it was a forced update by a user, or a daily check
 def scrape_leaderboard(type, force, idx):

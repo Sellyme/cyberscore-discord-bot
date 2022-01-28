@@ -1,6 +1,9 @@
 test_channel = 930473063043178586
-submissions_channel = 930586269237530654
+cs_submissions_channel = 930586269237530654 #Cyberscore `#submissions`
+ps_submissions_channel = 936392388102991892 #Pokemon Snap `#cyberscore-submissions`
 leaderboard_channel = 930981438638133269
+
+cs_server_id = 671836713236299826
 
 #all frequencies are in seconds
 submissions_frequency = 120 #frequency to scrape the latest submissions page

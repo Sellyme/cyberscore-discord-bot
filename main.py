@@ -21,15 +21,25 @@ async def on_ready():
 	loop.create_task(scrape_leaderboards())
 
 async def scrape_latest():
-	channel = client.get_channel(config.submissions_channel)
+	cs_channel = client.get_channel(config.cs_submissions_channel)
+	ps_channel = client.get_channel(config.ps_submissions_channel)
+
 	while True:
 		results = scrape.scrape_latest()
-		for msg in results:
+		cs_results = results[0]
+		ps_results = results[1]
+
+		for msg in cs_results:
 			print(msg)
 			
 			#create embed for Discord
 			embed = discord.Embed(description=msg)
-			await channel.send(embed=embed)
+			await cs_channel.send(embed=embed)
+			
+		for msg in ps_results:
+			#create embed for Discord
+			embed = discord.Embed(description=msg)
+			await ps_channel.send(embed=embed)
 		
 		await asyncio.sleep(config.submissions_frequency)
 
@@ -98,7 +108,11 @@ async def top_submitters(days = 1, channel_id = config.leaderboard_channel):
 @client.event
 async def on_message(message):
 	#ignore messages from bots to avoid double-posting on PluralKit etc.
-	if(message.author.bot):
+	if message.author.bot:
+		return
+
+	#we don't want to support any message requests in the NPS server
+	if message.guild.id == config.cs_server_id:
 		return
 
 	if message.content.startswith("!mainboard"):
