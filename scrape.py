@@ -128,7 +128,7 @@ def scrape_latest():
 	return results
 
 #force indicates whether it was a forced update by a user, or a daily check
-def scrape_leaderboard(type, force):
+def scrape_leaderboard(type, force, idx):
 	
 	#open previous leaderboard data
 	if type == "Mainboard":
@@ -140,19 +140,26 @@ def scrape_leaderboard(type, force):
 	elif type == "Solution":
 		URL = "https://cyberscore.me.uk/scoreboard.php?board=13"
 		f = open("leaderboards/solution.csv", "r+")
+	elif type == "Rainbow":
+		URL = "https://cyberscore.me.uk/scoreboard.php?board=12"
+		f = open("leaderboards/rainbow.csv", "r+")
 
 	previous_update = load_leaderboard(f)
 
 	#perform web scrape
 	page = requests.get(URL)
 	soup = BeautifulSoup(page.content, "html.parser")
-	
 	table = soup.find(id="scoreboard_classic")
 	players = list(table.find_all("tr"))
 	
+	#rainbow board has a header, other boards don't, so strip that
+	if type == "Rainbow":
+		players.pop(0)
+	#todo - finish rainbow handling
+
 	output = ""
 	save_data = ""
-	for i in range(0,10): #iterate over the top 10 players
+	for i in range(0,100): #iterate over the top 100 players
 		player = players[i]
 		
 		country_code = player.find(class_="flag").img["alt"].lower()
@@ -217,17 +224,23 @@ def scrape_leaderboard(type, force):
 				score_change_str = " ({:+,})".format(score_change)
 			else:
 				score_change_str = ""
-
-		#todo - if the user is in the top three, use a medal instead of position
-		output += pos_change_str + str(i+1) + ". "
-		output += "["+user_name+"]("+CS_PREFIX+user_link+") - "
-		output += score_raw+score_change_str+"\n"
+		
+		#the idx paramater indicates the start of the range that's displayed in Discord
+		#we only have the top 100, so idx can be at most 90
+		idx = max(0, min(90, idx)) #clamps idx to 0-90 inclusive
+		
+		#a total of 10 users are displayed, starting at idx
+		if i in range(idx, idx+10):
+			#todo - if the user is in the top three, use a medal instead of position
+			output += pos_change_str + str(i+1) + ". "
+			output += "["+user_name+"]("+CS_PREFIX+user_link+") - "
+			output += score_raw+score_change_str+"\n"
 		
 		save_data += str(i+1) + "," + user_name + "," + score_str.replace(",","") + "\n"
 
 	#only save the data if we did a daily update, so that score diffs are always relative
 	#to midnight UTC that day, and can't be disrupted by debugging
-	if(not force):
+	if(not force): #adjust this to force-overwrite
 		save_leaderboard(save_data, f)
 	f.close()
 

@@ -63,10 +63,10 @@ async def scrape_leaderboards():
 		await asyncio.sleep(config.leaderboard_frequency)
 		
 
-async def scrape_leaderboard(type, force = False, channel_id = config.leaderboard_channel):
+async def scrape_leaderboard(type, force = False, idx = 0, channel_id = config.leaderboard_channel):
 	channel = client.get_channel(channel_id)
 
-	results = scrape.scrape_leaderboard(type, force)
+	results = scrape.scrape_leaderboard(type, force, idx)
 	#result should be a pure string
 	print(results)
 
@@ -101,25 +101,58 @@ async def on_message(message):
 	if(message.author.bot):
 		return
 
-
-	channel = message.channel
-	if message.content == "!mainboard":
-		await scrape_leaderboard("Mainboard", True, channel.id)
-	elif message.content == "!arcade":
-		await scrape_leaderboard("Arcade", True, channel.id)
-	elif message.content == "!solution":
-		await scrape_leaderboard("Solution", True, channel.id)
-	elif message.content == "!rainbow":
+	if message.content.startswith("!mainboard"):
+		await handle_mainboard(message)
+	elif message.content.startswith("!arcade"):
+		await handle_arcade(message)
+	elif message.content.startswith("!solution"):
+		await handle_solution(message)
+	elif message.content.startswith("!rainbow"):
 		await channel.send("Feature not yet live")
 	elif message.content.startswith("!submitters"):
-		days = 1 #default parameter
-		if len(message.content) > 11:
-			#if there was a parameter added and we can parse that
-			daysParam = message.content.lstrip("!submitters ")
-			if daysParam.isnumeric():
-				#isnumeric excludes negatives or decimals, which is good for this use case
-				days = int(daysParam)
+		await handle_submitters(message)
 
-		await top_submitters(days, channel.id)
+#todo - genericise these
+async def handle_mainboard(message):
+	idx = 0 #default parameter
+	if len(message.content) > 10:
+		#if there was a parameter added and we can parse that
+		idxParam = message.content.lstrip("!mainboard ")
+		if idxParam.isnumeric():
+			#isnumeric excludes negatives or decimals, which is good for this use case
+			idx = int(idxParam) - 1
+	await scrape_leaderboard("Mainboard", True, idx, message.channel.id)
+
+async def handle_arcade(message):
+	idx = 0 #default parameter
+	if len(message.content) > 7:
+		#if there was a parameter added and we can parse that
+		idxParam = message.content.lstrip("!arcade ")
+		if idxParam.isnumeric():
+			#isnumeric excludes negatives or decimals, which is good for this use case
+			idx = int(idxParam) - 1
+	await scrape_leaderboard("Arcade", True, idx, message.channel.id)
+	
+async def handle_solution(message):
+	idx = 0 #default parameter
+	if len(message.content) > 9:
+		#if there was a parameter added and we can parse that
+		idxParam = message.content.lstrip("!solution ")
+		if idxParam.isnumeric():
+			#isnumeric excludes negatives or decimals, which is good for this use case
+			idx = int(idxParam) - 1
+	await scrape_leaderboard("Solution", True, idx, message.channel.id)
+
+
+async def handle_submitters(message):
+	days = 1 #default parameter
+	if len(message.content) > 11:
+		#if there was a parameter added and we can parse that
+		daysParam = message.content.lstrip("!submitters ")
+		if daysParam.isnumeric():
+			#isnumeric excludes negatives or decimals, which is good for this use case
+			days = int(daysParam)
+
+	await top_submitters(days, message.channel.id)
 
 client.run(TOKEN)
