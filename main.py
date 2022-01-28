@@ -48,13 +48,15 @@ async def scrape_leaderboards():
 		f = open("last_leaderboards", "r+")
 		last_scrape = f.read()
 		last_scrape_dt = datetime.strptime(last_scrape, "%Y-%m-%d %H:%M:%S")
+		lock_scrape = last_scrape_dt + timedelta(0.1)
 		next_scrape = last_scrape_dt + timedelta(1)
+		
 	
 		print("Checking leaderboard scrape")
 		#we want the leaderboard scrape to only run around midnight UTC, so init a datetime
 		now = datetime.utcnow()
 		#and then check that it's 12:xx am (or if we've missed a cycle somehow)
-		if(now.hour == 0 or next_scrape < now):
+		if (now.hour == 0 and lock_scrape < now) or next_scrape < now:
 			print("Running leaderboard scrape")
 
 			await scrape_leaderboard("Mainboard")
