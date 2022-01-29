@@ -114,7 +114,7 @@ async def on_message(message):
 		return
 
 	#we don't want to support any message requests in the NPS server
-	if message.guild.id == config.cs_server_id:
+	if message.guild.id == config.ps_server_id:
 		return
 
 	if message.content.startswith("!mainboard"):
