@@ -242,7 +242,7 @@ def scrape_leaderboard(type, force, idx):
 		if i in range(idx, idx+10):
 			#todo - if the user is in the top three, use a medal instead of position
 			output += pos_change_str + str(i+1) + ". "
-			output += "["+user_name+"]("+user_link+") - "
+			output += "["+user_name+"]("+CS_PREFIX+user_link+") - "
 			output += score_raw+score_change_str+"\n"
 		
 		save_data += str(i+1) + "," + user_name + "," + score_str.replace(",","") + "\n"
