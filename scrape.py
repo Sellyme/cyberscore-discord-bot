@@ -54,7 +54,7 @@ def scrape_latest():
 		
 		user_name = name_col.a.get_text()
 		user_link = name_col.a['href']
-		user = "["+user_name+"]("+CS_PREFIX+user_link+")"
+		user = "["+user_name+"]("+user_link+")"
 		
 		game_name = game_col.strong.get_text()
 		game_link = game_col.a['href']
@@ -242,7 +242,7 @@ def scrape_leaderboard(type, force, idx):
 		if i in range(idx, idx+10):
 			#todo - if the user is in the top three, use a medal instead of position
 			output += pos_change_str + str(i+1) + ". "
-			output += "["+user_name+"]("+CS_PREFIX+user_link+") - "
+			output += "["+user_name+"]("+user_link+") - "
 			output += score_raw+score_change_str+"\n"
 		
 		save_data += str(i+1) + "," + user_name + "," + score_str.replace(",","") + "\n"
@@ -274,7 +274,7 @@ def scrape_top_submitters(days):
 		user_link = cells[0].a['href']
 		user_score = cells[1].get_text().strip()
 
-		output += "["+user_name+"]("+CS_PREFIX+user_link+")" + " - " + user_score + " submissions\n"
+		output += "["+user_name+"]("+user_link+")" + " - " + user_score + " submissions\n"
 		i+=1
 	return output
 	
