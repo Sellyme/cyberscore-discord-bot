@@ -181,17 +181,21 @@ def scrape_leaderboard(type, force, idx):
 			user_name = user
 		user_link = user_cell["href"]
 		
-		#note that despite the class name "scoreboardCSR"
-		#this is actually still correct for arcade/solution
-		score_raw = player.find(class_="scoreboardCSR").get_text().strip()
 		#strip the text denoting the score type
+		#note that "scoreboardCSR" is actually the correct classname for arcade/solution
 		if type == "Mainboard":
+			score_raw = player.find(class_="scoreboardCSR").get_text().strip()
 			score = float(score_raw.rstrip(" CSR").replace(",",""))
 		elif type == "Arcade":
+			score_raw = player.find(class_="scoreboardCSR").get_text().strip()
 			score = int(score_raw.rstrip(" Tokens").replace(",",""))
 		elif type == "Solution":
+			score_raw = player.find(class_="scoreboardCSR").get_text().strip()
 			score = int(score_raw.rstrip(" Brain Power").replace(",",""))
-		
+		elif type == "Rainbow":
+			score_raw = player.h2.get_text()
+			score = int(score_raw.rstrip(" RP").replace(",",""))
+
 		#check position changes using the read file data
 		if user_name in previous_update:
 			user_data = previous_update[user_name]

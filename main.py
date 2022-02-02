@@ -62,6 +62,7 @@ async def scrape_leaderboards():
 			await scrape_leaderboard("Mainboard")
 			await scrape_leaderboard("Arcade")
 			await scrape_leaderboard("Solution")
+			await scrape_leaderboard("Rainbow")
 			await top_submitters(1)
 
 			#save the most recent scrape
@@ -124,7 +125,7 @@ async def on_message(message):
 	elif message.content.startswith("!solution"):
 		await handle_solution(message)
 	elif message.content.startswith("!rainbow"):
-		await channel.send("Feature not yet live")
+		await handle_rainbow(message)
 	elif message.content.startswith("!submitters"):
 		await handle_submitters(message)
 
@@ -159,6 +160,15 @@ async def handle_solution(message):
 			idx = int(idxParam) - 1
 	await scrape_leaderboard("Solution", True, idx, message.channel.id)
 
+async def handle_rainbow(message):
+	idx = 0 #default parameter
+	if len(message.content) > 10:
+		#if there was a parameter added and we can parse that
+		idxParam = message.content.lstrip("!rainbow ")
+		if idxParam.isnumeric():
+			#isnumeric excludes negatives or decimals, which is good for this use case
+			idx = int(idxParam) - 1
+	await scrape_leaderboard("Rainbow", True, idx, message.channel.id)
 
 async def handle_submitters(message):
 	days = 1 #default parameter
