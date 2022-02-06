@@ -137,16 +137,16 @@ def scrape_leaderboard(type, force, idx):
 	
 	#open previous leaderboard data
 	if type == "Mainboard":
-		URL = "https://cyberscore.me.uk/scoreboard.php"
+		URL = "https://cyberscore.me.uk/scoreboards/starboard"
 		f = open("leaderboards/mainboard.csv", "r+")
 	elif type == "Arcade":
-		URL = "https://cyberscore.me.uk/scoreboard.php?board=8"
+		URL = "https://cyberscore.me.uk/scoreboards/arcade"
 		f = open("leaderboards/arcade.csv", "r+")
 	elif type == "Solution":
-		URL = "https://cyberscore.me.uk/scoreboard.php?board=13"
+		URL = "https://cyberscore.me.uk/scoreboards/solution"
 		f = open("leaderboards/solution.csv", "r+")
 	elif type == "Rainbow":
-		URL = "https://cyberscore.me.uk/scoreboard.php?board=12"
+		URL = "https://cyberscore.me.uk/scoreboards/rainbow"
 		f = open("leaderboards/rainbow.csv", "r+")
 
 	previous_update = load_leaderboard(f)
@@ -160,7 +160,6 @@ def scrape_leaderboard(type, force, idx):
 	#rainbow board has a header, other boards don't, so strip that
 	if type == "Rainbow":
 		players.pop(0)
-	#todo - finish rainbow handling
 
 	output = ""
 	save_data = ""
