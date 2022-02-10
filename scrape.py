@@ -165,10 +165,7 @@ def scrape_leaderboard(type, force, idx):
 	save_data = ""
 	for i in range(0,100): #iterate over the top 100 players
 		player = players[i]
-		
-		country_code = player.find(class_="flag").img["alt"].lower()
-		flag_emoji = get_flag_emoji(country_code)
-		
+
 		user_cell = player.find(class_="name").a
 		user = user_cell.get_text()
 		#users are listed as e.g., 'John “N00bSl4y3r69” Doe', so extract only the alias
