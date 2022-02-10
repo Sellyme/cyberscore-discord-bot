@@ -83,9 +83,16 @@ async def scrape_leaderboard(type, force = False, idx = 0, channel_id = config.l
 	#result should be a pure string
 	print(results)
 
+	#rename "Mainboard" to "Starboard" as per new terminology
+	#this is a hacky user-facing solution until actual code updates can be implemented
+	if type == "Mainboard":
+		name = "Starboard"
+	else:
+		name = type
+
 	#create embed for Discord
 	embed = discord.Embed()
-	embed.add_field(name=type, value=results)
+	embed.add_field(name=name, value=results)
 	embed.timestamp = datetime.utcnow()
 	await channel.send(embed=embed)
 
@@ -118,7 +125,7 @@ async def on_message(message):
 	if message.guild.id == config.ps_server_id:
 		return
 
-	if message.content.startswith("!mainboard"):
+	if message.content.startswith("!mainboard") or message.content.startswith("!starboard"):
 		await handle_mainboard(message)
 	elif message.content.startswith("!arcade"):
 		await handle_arcade(message)
@@ -134,7 +141,7 @@ async def handle_mainboard(message):
 	idx = 0 #default parameter
 	if len(message.content) > 10:
 		#if there was a parameter added and we can parse that
-		idxParam = message.content.lstrip("!mainboard ")
+		idxParam = message.content.lstrip("!mainboard ").lstrip("!starboard ")
 		if idxParam.isnumeric():
 			#isnumeric excludes negatives or decimals, which is good for this use case
 			idx = int(idxParam) - 1
