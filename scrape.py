@@ -192,6 +192,12 @@ def scrape_leaderboard(type, force, idx):
 			score_raw = player.h2.get_text()
 			score = int(score_raw.rstrip(" RP").replace(",",""))
 
+		#in some cases score_raw includes excess whitespace
+		#e.g., "382,193     Brain Power"
+		#so we strip that. This occurs only on the Solution board, but
+		#no harm in running it on all boards just in case that changes
+		score_raw = ' '.join(score_raw.split())
+
 		#check position changes using the read file data
 		if user_name in previous_update:
 			user_data = previous_update[user_name]
