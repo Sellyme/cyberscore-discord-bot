@@ -31,7 +31,7 @@ def scrape_latest():
 	for record in records:
 		columns = list(record.find_all("td"))
 		#skip any records we've already scanned
-		date = columns[10].get_text()
+		date = columns[9].get_text()
 		if date <= last_update:
 			#print ("Skipping update on", date, "as it is before", last_update)
 			continue
@@ -47,7 +47,6 @@ def scrape_latest():
 		pos_col = columns[6]
 		type_col = columns[7]
 		award_col = columns[8]
-		uc_col = columns[9] #check exact function here
 
 		country = flag_col.img.get('alt').lower()
 		flag_emoji = get_flag_emoji(country)
