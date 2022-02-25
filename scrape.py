@@ -102,14 +102,21 @@ def scrape_latest():
 		pos = pos_col.get_text().replace(" ","")
 		csr = award_col.strong
 		#csr is not displayed for UC charts, so display Challenge Points instead
+		#for unranked charts (e.g., time played incrementals) display nothing)
 		if csr:
 			csr = csr.get_text().strip()
-		else:
+		elif award_col.span:
 			csr = award_col.span.get_text()
+		else:
+			csr = ""
 
 		#construct string
 		output = flag_emoji + " " + user + " just scored " + score
-		output += " (Pos: **" + pos + "**" + medal + " · " + csr+")\n"
+		output += " (Pos: **" + pos + "**" + medal
+		#add CSR/UC if applicable
+		if csr:
+			output += " · " + csr
+		output += ")\n"
 		output += game + " → " + chart
 		output += comment #if the comment exists it will appear italicised on a new line
 		
