@@ -1,6 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 
 CS_PREFIX = "https://cyberscore.me.uk"
@@ -27,6 +27,14 @@ def scrape_latest():
 	#and reverse them so we check the oldest first
 	records.reverse()
 	
+	#there's a bug in CS where updated scores are incorrectly displayed on latest-submissions
+	#as being in the position the old score was before the update. This only occurs
+	#for a very short time window after the score was published.
+	#To avoid this from occuring, we get the current UTC time, and then ignore any scores
+	#that were published within the last few seconds, and only record them on the next scrape
+	maximum_datetime = datetime.utcnow() - timedelta(seconds=3)
+	maximum_datetime_str = maximum_datetime.strftime("%Y-%m-%d %H:%M:%S")
+
 	#iterate over all records
 	for record in records:
 		columns = list(record.find_all("td"))
@@ -34,6 +42,9 @@ def scrape_latest():
 		date = columns[9].get_text()
 		if date <= last_update:
 			#print ("Skipping update on", date, "as it is before", last_update)
+			continue
+		elif date > maximum_datetime_str:
+			print("Skipping update on", date, "as it exceeds max DT", maximum_datetime_str)
 			continue
 		else:
 			new_update = date
