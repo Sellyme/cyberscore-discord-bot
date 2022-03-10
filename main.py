@@ -82,6 +82,12 @@ async def scrape_leaderboard(type, force = False, idx = 0, channel_id = config.l
 	results = scrape.scrape_leaderboard(type, force, idx)
 	#result should be a pure string
 	print(results)
+	if type == "Submissions":
+		#this board isn't too useful to output daily since the 24hr submitters board exists
+		return
+	elif type == "Video":
+		#more user-friendly name for the embed title
+		name = "Video Proof"
 	else:
 		name = type
 
@@ -128,6 +134,12 @@ async def on_message(message):
 		await handle_generic_leaderboard(message, "Arcade")
 	elif message.content.startswith("!solution"):
 		await handle_generic_leaderboard(message, "Solution")
+	elif message.content.startswith("!challenge"):
+		await handle_generic_leaderboard(message, "Challenge")
+	elif message.content.startswith("!proof"):
+		await handle_generic_leaderboard(message, "Proof")
+	elif message.content.startswith("!video"):
+		await handle_generic_leaderboard(message, "Video")
 	elif message.content.startswith("!submitters"):
 		await handle_submitters(message)
 
@@ -157,6 +169,14 @@ async def handle_submitters(message):
 		if daysParam.isnumeric():
 			#isnumeric excludes negatives or decimals, which is good for this use case
 			days = int(daysParam)
+		elif daysParam.startswith("all"):
+			idx = 0 #default parameter
+			if len(daysParam) > 4: #if the argument was e.g., "!submitters all 30"
+				idxParam = daysParam.lstrip("all ")
+				if idxParam.isnumeric():
+					idx = int(idxParam) - 1
+			await scrape_leaderboard("Submissions", True, idx, message.channel.id)
+			return
 
 	await top_submitters(days, message.channel.id)
 

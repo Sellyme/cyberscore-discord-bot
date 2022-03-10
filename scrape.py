@@ -162,9 +162,21 @@ def scrape_leaderboard(type, force, idx):
 	elif type == "Solution":
 		URL = "https://cyberscore.me.uk/scoreboards/solution"
 		f = open("leaderboards/solution.csv", "r+")
+	elif type == "Challenge":
+		URL = "https://cyberscore.me.uk/scoreboards/challenge"
+		f = open("leaderboards/challenge.csv", "r+")
 	elif type == "Rainbow":
 		URL = "https://cyberscore.me.uk/scoreboards/rainbow"
 		f = open("leaderboards/rainbow.csv", "r+")
+	elif type == "Proof":
+		URL = "https://cyberscore.me.uk/scoreboards/proof"
+		f = open("leaderboards/proof.csv", "r+")
+	elif type == "Video":
+		URL = "https://cyberscore.me.uk/scoreboards/vproof"
+		f = open("leaderboards/vproof.csv", "r+")
+	elif type == "Submissions":
+		URL = "https://cyberscore.me.uk/scoreboards/submissions"
+		f = open("leaderboards/submissions.csv", "r+")
 
 	previous_update = load_leaderboard(f)
 
@@ -174,8 +186,8 @@ def scrape_leaderboard(type, force, idx):
 	table = soup.find(id="scoreboard_classic")
 	players = list(table.find_all("tr"))
 	
-	#rainbow board has a header, other boards don't, so strip that
-	if type == "Rainbow":
+	#Some boards have a header, so strip that
+	if type == "Rainbow" or type == "Submissions" or type == "Proof" or type == "Video":
 		players.pop(0)
 
 	output = ""
@@ -205,9 +217,15 @@ def scrape_leaderboard(type, force, idx):
 		elif type == "Solution":
 			score_raw = player.find(class_="scoreboardCSR").get_text().strip()
 			score = int(score_raw.rstrip(" Brain Power").replace(",",""))
+		elif type == "Challenge":
+			score_raw = player.find(class_="scoreboardCSR").get_text().strip()
+			score = float(score_raw.rstrip(" Style Points").replace(",",""))
 		elif type == "Rainbow":
 			score_raw = player.h2.get_text()
 			score = int(score_raw.rstrip(" RP").replace(",",""))
+		elif type == "Submissions" or type == "Proof" or type == "Video":
+			score_raw = player.b.get_text()
+			score = int(score_raw.replace(",",""))
 
 		#in some cases score_raw includes excess whitespace
 		#e.g., "382,193     Brain Power"
@@ -296,7 +314,7 @@ def scrape_top_submitters(days):
 		output += "["+user_name+"]("+user_link+")" + " - " + user_score + " submissions\n"
 		i+=1
 	return output
-	
+
 
 def get_flag_emoji(country_code):
 	#Cyberscore flag codes don't exactly match Discord emoji codes
