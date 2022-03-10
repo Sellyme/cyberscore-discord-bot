@@ -126,56 +126,33 @@ async def on_message(message):
 		return
 
 	if message.content.startswith("!mainboard") or message.content.startswith("!starboard"):
-		await handle_mainboard(message)
-	elif message.content.startswith("!arcade"):
-		await handle_arcade(message)
-	elif message.content.startswith("!solution"):
-		await handle_solution(message)
+		await handle_generic_leaderboard(message, "Starboard")
 	elif message.content.startswith("!rainbow"):
-		await handle_rainbow(message)
+		await handle_generic_leaderboard(message, "Rainbow")
+	elif message.content.startswith("!arcade"):
+		await handle_generic_leaderboard(message, "Arcade")
+	elif message.content.startswith("!solution"):
+		await handle_generic_leaderboard(message, "Solution")
 	elif message.content.startswith("!submitters"):
 		await handle_submitters(message)
 
 #todo - genericise these
-async def handle_mainboard(message):
+async def handle_generic_leaderboard(message, type):
+	expected_prefix_length = len(type) + 2 #+2 because of the ! and the trailing space
 	idx = 0 #default parameter
-	if len(message.content) > 10:
+	if len(message.content) > expected_prefix_length:
 		#if there was a parameter added and we can parse that
-		idxParam = message.content.lstrip("!mainboard ").lstrip("!starboard ")
+		expectedPrefix = "!"+type.lower()+" "
+		idxParam = message.content.lower().lstrip(expectedPrefix)
+		#for Starboard, also check for use of "mainboard"
+		if type == "Starboard":
+			idxParam.lstrip("!mainboard ") #doing this even if "Starboard" was used is fine
+		#once we've stripped the command name, check that the parameter was valid
 		if idxParam.isnumeric():
 			#isnumeric excludes negatives or decimals, which is good for this use case
 			idx = int(idxParam) - 1
-	await scrape_leaderboard("Mainboard", True, idx, message.channel.id)
-
-async def handle_arcade(message):
-	idx = 0 #default parameter
-	if len(message.content) > 7:
-		#if there was a parameter added and we can parse that
-		idxParam = message.content.lstrip("!arcade ")
-		if idxParam.isnumeric():
-			#isnumeric excludes negatives or decimals, which is good for this use case
-			idx = int(idxParam) - 1
-	await scrape_leaderboard("Arcade", True, idx, message.channel.id)
 	
-async def handle_solution(message):
-	idx = 0 #default parameter
-	if len(message.content) > 9:
-		#if there was a parameter added and we can parse that
-		idxParam = message.content.lstrip("!solution ")
-		if idxParam.isnumeric():
-			#isnumeric excludes negatives or decimals, which is good for this use case
-			idx = int(idxParam) - 1
-	await scrape_leaderboard("Solution", True, idx, message.channel.id)
-
-async def handle_rainbow(message):
-	idx = 0 #default parameter
-	if len(message.content) > 10:
-		#if there was a parameter added and we can parse that
-		idxParam = message.content.lstrip("!rainbow ")
-		if idxParam.isnumeric():
-			#isnumeric excludes negatives or decimals, which is good for this use case
-			idx = int(idxParam) - 1
-	await scrape_leaderboard("Rainbow", True, idx, message.channel.id)
+	await scrape_leaderboard(type, True, idx, message.channel.id)
 
 async def handle_submitters(message):
 	days = 1 #default parameter
