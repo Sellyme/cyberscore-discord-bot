@@ -112,7 +112,7 @@ async def scrape_leaderboard(type, force = False, idx = 0, channel_id = config.l
 	await channel.send(embed=embed)
 	
 	#and indicate whether or not there was a change in the top 10
-	return ("▲" in output or "▼" in output or ":new:" in output)
+	return ("▲" in results or "▼" in results or ":new:" in results)
 
 async def top_submitters(days = 1, channel_id = config.leaderboard_channel):
 	channel = client.get_channel(channel_id)
