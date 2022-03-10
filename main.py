@@ -82,11 +82,6 @@ async def scrape_leaderboard(type, force = False, idx = 0, channel_id = config.l
 	results = scrape.scrape_leaderboard(type, force, idx)
 	#result should be a pure string
 	print(results)
-
-	#rename "Mainboard" to "Starboard" as per new terminology
-	#this is a hacky user-facing solution until actual code updates can be implemented
-	if type == "Mainboard":
-		name = "Starboard"
 	else:
 		name = type
 

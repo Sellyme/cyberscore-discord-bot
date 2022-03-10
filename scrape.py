@@ -153,9 +153,9 @@ def scrape_latest():
 def scrape_leaderboard(type, force, idx):
 	
 	#open previous leaderboard data
-	if type == "Mainboard":
+	if type == "Starboard":
 		URL = "https://cyberscore.me.uk/scoreboards/starboard"
-		f = open("leaderboards/mainboard.csv", "r+")
+		f = open("leaderboards/starboard.csv", "r+")
 	elif type == "Arcade":
 		URL = "https://cyberscore.me.uk/scoreboards/arcade"
 		f = open("leaderboards/arcade.csv", "r+")
@@ -196,7 +196,7 @@ def scrape_leaderboard(type, force, idx):
 		
 		#strip the text denoting the score type
 		#note that "scoreboardCSR" is actually the correct classname for arcade/solution
-		if type == "Mainboard":
+		if type == "Starboard":
 			score_raw = player.find(class_="scoreboardCSR").get_text().strip()
 			score = float(score_raw.rstrip(" CSR").replace(",",""))
 		elif type == "Arcade":
@@ -235,8 +235,8 @@ def scrape_leaderboard(type, force, idx):
 			pos_change_str = ":new:"+(" "*8)
 			score_change = 0
 
-		#mainboard requires decimal formatting for output, other boards are integers
-		if type == "Mainboard":
+		#Starboard+Challenge requires decimal formatting for output, other boards are integers
+		if type == "Starboard" or type == "Challenge":
 			score_str = "{:,.2f}".format(score)
 			if score_change:
 				score_change_str = " ({:+,.2f})".format(score_change)
