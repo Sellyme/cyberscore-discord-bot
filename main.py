@@ -159,6 +159,8 @@ async def on_message(message):
 		await handle_generic_leaderboard(message, "Video")
 	elif message.content.startswith("!submitters"):
 		await handle_submitters(message)
+	elif message.content.startswith("!debug"):
+		await debug(message)
 
 #todo - genericise these
 async def handle_generic_leaderboard(message, type):
@@ -196,5 +198,17 @@ async def handle_submitters(message):
 			return
 
 	await top_submitters(days, message.channel.id)
+
+async def debug(message):
+	channel = client.get_channel(message.channel.id)
+	if len(message.content) > 7:
+		debugParam = message.content.lstrip("!debug ")
+		if debugParam.startswith("roleping"):
+			debugData = debugParam.lstrip("roleping")
+			if "▲" in debugData or "▼" in debugData or ":new:" in debugData:
+				await channel.send("<@&951246251427520512>")
+			else:
+				await channel.send("This would not have pinged a role")
+
 
 client.run(TOKEN)
