@@ -96,7 +96,7 @@ async def scrape_leaderboard(type, force = False, idx = 0, channel_id = config.l
 	results = scrape.scrape_leaderboard(type, force, idx)
 	#result should be a pure string
 	print(results)
-	if type == "Submissions":
+	if type == "Submissions" and not force:
 		#this board isn't too useful to output daily since the 24hr submitters board exists
 		return
 	elif type == "Video":
