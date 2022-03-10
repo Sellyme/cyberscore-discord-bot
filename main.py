@@ -59,18 +59,32 @@ async def scrape_leaderboards():
 		if (now.hour == 0 and lock_scrape < now) or next_scrape < now:
 			print("Running leaderboard scrape")
 
-			await scrape_leaderboard("Mainboard")
-			await scrape_leaderboard("Arcade")
-			await scrape_leaderboard("Solution")
-			await scrape_leaderboard("Rainbow")
+			top10_change = False
+
+			#if any of the important leaderboards have position changes, track them
+			top10_change = (await scrape_leaderboard("Starboard") or
+			await scrape_leaderboard("Rainbow") or
+			await scrape_leaderboard("Arcade") or
+			await scrape_leaderboard("Solution") or
+			await scrape_leaderboard("Challenge") or
+			await scrape_leaderboard("Proof") or
+			await scrape_leaderboard("Video"))
+			#and then also run the remaining leaderboards
+			await scrape_leaderboard("Submissions")
 			await top_submitters(1)
 
 			#save the most recent scrape
 			f.seek(0)
 			f.write(now.strftime("%Y-%m-%d %H:%M:%S"))
 			f.truncate()
+			
+			#finally, print out a role ping if there was a positional change
+			if top10_change:
+				channel = client.get_channel(config.leaderboard_channel)
+				await channel.send("<@&951246251427520512>")
 
 		f.close()
+
 
 		#and re-check hourly
 		await asyncio.sleep(config.leaderboard_frequency)
@@ -96,6 +110,9 @@ async def scrape_leaderboard(type, force = False, idx = 0, channel_id = config.l
 	embed.add_field(name=name, value=results)
 	embed.timestamp = datetime.utcnow()
 	await channel.send(embed=embed)
+	
+	#and indicate whether or not there was a change in the top 10
+	return ("▲" in output or "▼" in output or ":new:" in output)
 
 async def top_submitters(days = 1, channel_id = config.leaderboard_channel):
 	channel = client.get_channel(channel_id)
