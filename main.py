@@ -59,16 +59,17 @@ async def scrape_leaderboards():
 		if (now.hour == 0 and lock_scrape < now) or next_scrape < now:
 			print("Running leaderboard scrape")
 
-			top10_change = False
-
 			#if any of the important leaderboards have position changes, track them
-			top10_change = (await scrape_leaderboard("Starboard") or
-			await scrape_leaderboard("Rainbow") or
-			await scrape_leaderboard("Arcade") or
-			await scrape_leaderboard("Solution") or
-			await scrape_leaderboard("Challenge") or
-			await scrape_leaderboard("Proof") or
-			await scrape_leaderboard("Video"))
+			starboard_change = await scrape_leaderboard("Starboard")
+			rainbow_change = await scrape_leaderboard("Rainbow")
+			arcade_change = await scrape_leaderboard("Arcade")
+			solution_change = await scrape_leaderboard("Solution")
+			challenge_change = await scrape_leaderboard("Challenge")
+			proof_change = await scrape_leaderboard("Proof")
+			video_change = await scrape_leaderboard("Video")
+			
+			top10_change = starboard_change or rainbow_change or arcade_change or solution_change or challenge_change or proof_change or video_change
+
 			#and then also run the remaining leaderboards
 			await scrape_leaderboard("Submissions")
 			await top_submitters(1)
