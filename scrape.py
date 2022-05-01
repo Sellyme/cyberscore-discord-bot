@@ -5,7 +5,6 @@ import re
 import math
 
 CS_PREFIX = "https://cyberscore.me.uk"
-last_update_time = 0 #todo - set this to startup or a saved time
 
 def scrape_latest():
 	URL = "https://cyberscore.me.uk/latest-submissions"

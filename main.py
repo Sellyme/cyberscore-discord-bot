@@ -36,6 +36,9 @@ async def scrape_latest():
 			
 			#create embed for Discord
 			embed = discord.Embed(description=msg)
+			#this can often fail with a 504 HTTPException if Discord is having server issues
+			#ideally we should add handling for this at some point and retry the message
+			#as otherwise the message being sent just fails and is skipped
 			await cs_channel.send(embed=embed)
 			
 		for msg in ps_results:
@@ -52,7 +55,6 @@ async def scrape_leaderboards():
 		last_scrape_dt = datetime.strptime(last_scrape, "%Y-%m-%d %H:%M:%S")
 		lock_scrape = last_scrape_dt + timedelta(0.1)
 		next_scrape = last_scrape_dt + timedelta(1)
-		
 	
 		print("Checking leaderboard scrape")
 		#we want the leaderboard scrape to only run around midnight UTC, so init a datetime
@@ -236,6 +238,9 @@ async def debug(message):
 				await channel.send("<@&951246251427520512>")
 			else:
 				await channel.send("This would not have pinged a role")
+		elif debugParam.startswith("forcedaily "):
+			forceParam = debugParam.lstrip("forcedaily ")
+			await scrape_leaderboard(forceParam)
 
 
 firstLoad = True #check this on_ready() and then set it to false so we never duplicate the threads
