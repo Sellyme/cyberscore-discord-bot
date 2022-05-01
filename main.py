@@ -153,15 +153,15 @@ async def on_message(message):
 	if message.guild.id == config.ps_server_id:
 		return
 
-	if message.content.startswith("!mainboard") or message.content.startswith("!starboard"):
+	if message.content.startswith("!mainboard") or message.content.startswith("!starboard") or message.content.startswith("!csr"):
 		await handle_generic_leaderboard(message, "Starboard")
-	elif message.content.startswith("!rainbow"):
+	elif message.content.startswith("!rainbow") or message.content.startswith("!rp"):
 		await handle_generic_leaderboard(message, "Rainbow")
-	elif message.content.startswith("!arcade"):
+	elif message.content.startswith("!arcade") or message.content.startswith("!tokens"):
 		await handle_generic_leaderboard(message, "Arcade")
-	elif message.content.startswith("!solution"):
+	elif message.content.startswith("!solution") or message.content.startswith("!bp"):
 		await handle_generic_leaderboard(message, "Solution")
-	elif message.content.startswith("!challenge"):
+	elif message.content.startswith("!challenge") or message.content.startswith("!uc"):
 		await handle_generic_leaderboard(message, "Challenge")
 	elif message.content.startswith("!collectible") or message.content.startswith("!stars"):
 		await handle_generic_leaderboard(message, "Collectible")
@@ -173,9 +173,9 @@ async def on_message(message):
 		await handle_generic_leaderboard(message, "Speedrun")
 	elif message.content.startswith("!proof"):
 		await handle_generic_leaderboard(message, "Proof")
-	elif message.content.startswith("!video"):
+	elif message.content.startswith("!video") or message.content.startswith("!vp"):
 		await handle_generic_leaderboard(message, "Video")
-	elif message.content.startswith("!submitters"):
+	elif message.content.startswith("!sub"):
 		await handle_submitters(message)
 	elif message.content.startswith("!debug"):
 		await debug(message)
