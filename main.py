@@ -65,12 +65,16 @@ async def scrape_leaderboards():
 			arcade_change = await scrape_leaderboard("Arcade")
 			solution_change = await scrape_leaderboard("Solution")
 			challenge_change = await scrape_leaderboard("Challenge")
+			collection_change = await scrape_leaderboard("Collectible")
+			incremental_change = await scrape_leaderboard("Incremental")
+			speedrun_change = await scrape_leaderboard("Speedrun")
 			proof_change = await scrape_leaderboard("Proof")
 			video_change = await scrape_leaderboard("Video")
 			
-			top10_change = starboard_change or rainbow_change or arcade_change or solution_change or challenge_change or proof_change or video_change
+			top10_change = starboard_change or rainbow_change or arcade_change or solution_change or challenge_change or collection_change or proof_change or video_change or speedrun_change
 
 			#and then also run the remaining leaderboards
+			await scrape_leaderboard("Level")
 			await scrape_leaderboard("Submissions")
 			await top_submitters(1)
 
@@ -100,18 +104,23 @@ async def scrape_leaderboard(type, force = False, idx = 0, channel_id = config.l
 	if type == "Submissions" and not force:
 		#this board isn't too useful to output daily since the 24hr submitters board exists
 		return
+	#add some more user-friendly names for the embed titles where needed
 	elif type == "Video":
-		#more user-friendly name for the embed title
 		name = "Video Proof"
+	elif type == "Challenge":
+		name = "User Challenge"
 	else:
 		name = type
 
-	#create embed for Discord
-	embed = discord.Embed()
-	embed.add_field(name=name, value=results)
-	embed.timestamp = datetime.utcnow()
-	await channel.send(embed=embed)
-	
+	#on the automated daily updates we already post the levels in the Incremental leaderboard
+	#so if this was a daily update of the levels, DON'T make a Discord message
+	if type != "Level" or force:
+		#create embed for Discord
+		embed = discord.Embed()
+		embed.add_field(name=name, value=results)
+		embed.timestamp = datetime.utcnow()
+		await channel.send(embed=embed)
+
 	#and indicate whether or not there was a change in the top 10
 	return ("▲" in results or "▼" in results or ":new:" in results)
 
@@ -154,6 +163,14 @@ async def on_message(message):
 		await handle_generic_leaderboard(message, "Solution")
 	elif message.content.startswith("!challenge"):
 		await handle_generic_leaderboard(message, "Challenge")
+	elif message.content.startswith("!collectible") or message.content.startswith("!stars"):
+		await handle_generic_leaderboard(message, "Collectible")
+	elif message.content.startswith("!incremental") or message.content.startswith("!xp"):
+		await handle_generic_leaderboard(message, "Incremental")
+	elif message.content.startswith("!level") or message.content.startswith("!cxp"):
+		await handle_generic_leaderboard(message, "Level")
+	elif message.content.startswith("!speedrun") or message.content.startswith("!time"):
+		await handle_generic_leaderboard(message, "Speedrun")
 	elif message.content.startswith("!proof"):
 		await handle_generic_leaderboard(message, "Proof")
 	elif message.content.startswith("!video"):

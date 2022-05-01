@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 import re
+import math
 
 CS_PREFIX = "https://cyberscore.me.uk"
 last_update_time = 0 #todo - set this to startup or a saved time
@@ -165,6 +166,15 @@ def scrape_leaderboard(type, force, idx):
 	elif type == "Challenge":
 		URL = "https://cyberscore.me.uk/scoreboards/challenge"
 		f = open("leaderboards/challenge.csv", "r+")
+	elif type == "Collectible":
+		URL = "https://cyberscore.me.uk/scoreboards/collectible"
+		f = open("leaderboards/collectible.csv", "r+")
+	elif type == "Incremental":
+		URL = "https://cyberscore.me.uk/scoreboards/incremental"
+		f = open("leaderboards/incremental.csv", "r+")
+	elif type == "Level":
+		URL = "https://cyberscore.me.uk/scoreboards/incremental?manual_sort=cxp"
+		f = open("leaderboards/level.csv", "r+")
 	elif type == "Rainbow":
 		URL = "https://cyberscore.me.uk/scoreboards/rainbow"
 		f = open("leaderboards/rainbow.csv", "r+")
@@ -177,6 +187,9 @@ def scrape_leaderboard(type, force, idx):
 	elif type == "Submissions":
 		URL = "https://cyberscore.me.uk/scoreboards/submissions"
 		f = open("leaderboards/submissions.csv", "r+")
+	elif type == "Speedrun":
+		URL = "https://cyberscore.me.uk/scoreboards/speedrun"
+		f = open("leaderboards/speedrun.csv", "r+")
 
 	previous_update = load_leaderboard(f)
 
@@ -187,7 +200,8 @@ def scrape_leaderboard(type, force, idx):
 	players = list(table.find_all("tr"))
 	
 	#Some boards have a header, so strip that
-	if type == "Rainbow" or type == "Submissions" or type == "Proof" or type == "Video":
+	if (type == "Rainbow" or type == "Submissions" or type == "Incremental" 
+	or type == "Proof" or type == "Video" or type == "Speedrun" or type == "Level"):
 		players.pop(0)
 
 	output = ""
@@ -220,12 +234,37 @@ def scrape_leaderboard(type, force, idx):
 		elif type == "Challenge":
 			score_raw = player.find(class_="scoreboardCSR").get_text().strip()
 			score = float(score_raw.rstrip(" Style Points").replace(",",""))
+		elif type == "Collectible":
+			score_raw = player.find(class_="scoreboardCSR").get_text().strip()
+			score = int(score_raw.rstrip(" Cyberstars").replace(",",""))
+		elif type == "Incremental":
+			#incremental is a bit odd as there's two important metrics
+			inc_scores = list(player.find_all(class_="scoreboardCSR"))
+			#for the incremental score we display "VXP" instead of "Versus XP"
+			#this is done solely due to embed size constraints
+			score_raw = inc_scores[0].get_text().strip().replace("Versus ","V")
+			score = int(score_raw.rstrip(" VXP").replace(",",""))
+			inc_level_raw = inc_scores[1].contents[0].strip()
+			#level will never reach 1,000 so no comma replacement needed
+			#we also don't do any maths with it so don't need to store as int
+			inc_level = inc_level_raw.lstrip("Level ")
+		elif type == "Level":
+			#for level we want to actually get the raw CXP and reverse-engineer the level from that
+			#this allows us to display sub-integer changes
+			cxp_raw = list(player.find_all(class_="scoreboardCSR"))[1].contents[3].get_text()
+			cxp = int(cxp_raw.strip().rstrip(" CXP").replace(",",""))
+			score = math.log(max(10, cxp)/10, 2.5) + 1 #a user with 0xp starts at level 1
+			score = round(score, 2) #round it to 2dp for display purposes
+			score_raw = "Level " + "{:.2f}".format(score)
 		elif type == "Rainbow":
 			score_raw = player.h2.get_text()
 			score = int(score_raw.rstrip(" RP").replace(",",""))
 		elif type == "Submissions" or type == "Proof" or type == "Video":
 			score_raw = player.b.get_text()
 			score = int(score_raw.replace(",",""))
+		elif type == "Speedrun":
+			score_raw = player.find(class_="medals").get_text().strip()
+			score = time_to_seconds(score_raw)
 
 		#in some cases score_raw includes excess whitespace
 		#e.g., "382,193     Brain Power"
@@ -253,23 +292,36 @@ def scrape_leaderboard(type, force, idx):
 			pos_change_str = ":new:"+(" "*8)
 			score_change = 0
 
-		#Starboard+Challenge requires decimal formatting for output, other boards are integers
-		if type == "Starboard" or type == "Challenge":
+		#Starboard+Challenge+Level requires decimal formatting for output, Speedrun requires time
+		#other boards are integers
+		if type == "Starboard" or type == "Level":
 			score_str = "{:,.2f}".format(score)
 			if score_change:
 				score_change_str = " ({:+,.2f})".format(score_change)
-			else:
-				score_change_str = ""
+		elif type == "Challenge":
+			score_str = "{:,.1f}".format(score)
+			if score_change:
+				score_change_str = " ({:+,.1f})".format(score_change)
+		elif type == "Speedrun":
+			score_str = seconds_to_time(score)
+			if score_change:
+				symbol = ""
+				if score_change > 0:
+					symbol = "+"
+				elif score_change < 0:
+					symbol = "-"
+				score_change_str = " ("+symbol+seconds_to_time(score_change)+")"
 		else:
 			#score is stored as a float to support CSR
 			#but other boards have integer scores, so we convert to that for representation
 			score_change = int(score_change)
 			score_str = "{:,}".format(score)
-
 			if score_change:
 				score_change_str = " ({:+,})".format(score_change)
-			else:
-				score_change_str = ""
+
+		#if we didn't have a score change, set an empty differential string
+		if not score_change:
+			score_change_str = ""
 		
 		#the idx paramater indicates the start of the range that's displayed in Discord
 		#we only have the top 100, so idx can be at most 90
@@ -280,9 +332,17 @@ def scrape_leaderboard(type, force, idx):
 			#todo - if the user is in the top three, use a medal instead of position
 			output += pos_change_str + str(i+1) + ". "
 			output += "["+user_name+"]("+CS_PREFIX+user_link+") - "
-			output += score_raw+score_change_str+"\n"
+			output += score_raw+score_change_str
+			#if we're running the incremental scoreboard include level
+			if type == "Incremental":
+				output += " [L" + inc_level + "]"
+			output += "\n"
 		
-		save_data += str(i+1) + "," + user_name + "," + score_str.replace(",","") + "\n"
+		#and add it to the leaderboard .csv
+		if type == "Speedrun":
+			save_data += str(i+1) + "," + user_name + "," + str(score) + "\n"
+		else:
+			save_data += str(i+1) + "," + user_name + "," + score_str.replace(",","") + "\n"
 
 	#only save the data if we did a daily update, so that score diffs are always relative
 	#to midnight UTC that day, and can't be disrupted by debugging
@@ -315,6 +375,22 @@ def scrape_top_submitters(days):
 		i+=1
 	return output
 
+def time_to_seconds(time_str):
+    h, m, s = time_str.split(':')
+    return int(h) * 3600 + int(m) * 60 + int(s)
+
+def seconds_to_time(seconds):
+	#the maths here fails dismally with negative numbers
+	#since we need to support negatives (for score differentials)
+	#we just take the absolute value of the input
+	seconds = abs(seconds)
+	h = str(math.floor(seconds/3600)).zfill(2)
+	seconds = seconds % 3600
+	m = str(math.floor(seconds/60)).zfill(2)
+	seconds = seconds % 60
+	s = str(seconds).zfill(2)
+	return h+":"+m+":"+s
+
 
 def get_flag_emoji(country_code):
 	#Cyberscore flag codes don't exactly match Discord emoji codes
@@ -341,7 +417,10 @@ def load_leaderboard(file):
 		player = line.split(",")
 		pos = int(player[0])
 		name = player[1]
-		score = float(player[2]) #only a float for some boards
+		if ":" in player[2]: #special handling for speedruns since it's bugged
+			score = time_to_seconds(player[2])
+		else:
+			score = float(player[2]) #only a float for some boards
 		data[name] = {"pos": pos, "score": score}
 		line = file.readline()
 	
