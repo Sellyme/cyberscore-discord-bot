@@ -182,40 +182,47 @@ async def on_message(message):
 
 #todo - genericise these
 async def handle_generic_leaderboard(message, type):
-	expected_prefix_length = len(type) + 2 #+2 because of the ! and the trailing space
 	idx = 0 #default parameter
-	if len(message.content) > expected_prefix_length:
+	args = get_args(message)
+
+	if len(args) > 1:
 		#if there was a parameter added and we can parse that
-		expectedPrefix = "!"+type.lower()+" "
-		idxParam = message.content.lower().lstrip(expectedPrefix)
-		#for Starboard, also check for use of "mainboard"
-		if type == "Starboard":
-			idxParam.lstrip("!mainboard ") #doing this even if "Starboard" was used is fine
-		#once we've stripped the command name, check that the parameter was valid
+		idxParam =  args[1]
 		if idxParam.isnumeric():
 			#isnumeric excludes negatives or decimals, which is good for this use case
 			idx = int(idxParam) - 1
-	
+
 	await scrape_leaderboard(type, True, idx, message.channel.id)
 
 async def handle_submitters(message):
 	days = 1 #default parameter
-	if len(message.content) > 11:
+	args = get_args(message)
+
+	if len(args) > 1:
 		#if there was a parameter added and we can parse that
-		daysParam = message.content.lstrip("!submitters ")
+		daysParam = args[1]
 		if daysParam.isnumeric():
 			#isnumeric excludes negatives or decimals, which is good for this use case
 			days = int(daysParam)
-		elif daysParam.startswith("all"):
+		elif daysParam == "ytd":
+			#year-to-date stats, so get the current day of year index
+			days = int(format(datetime.utcnow(), '%j'))
+		elif daysParam == "all":
 			idx = 0 #default parameter
-			if len(daysParam) > 4: #if the argument was e.g., "!submitters all 30"
-				idxParam = daysParam.lstrip("all ")
+			if len(args) > 2: #if the arguments were e.g., [!submitters,all,30]
+				idxParam = args[2]
 				if idxParam.isnumeric():
 					idx = int(idxParam) - 1
 			await scrape_leaderboard("Submissions", True, idx, message.channel.id)
 			return
 
 	await top_submitters(days, message.channel.id)
+
+def get_args(message):
+	args = message.content.split(" ")
+	#remove any empty strings from the args, so "!starboard  20" still works despite two spaces
+	args = list(filter(None, args))
+	return args
 
 async def debug(message):
 	channel = client.get_channel(message.channel.id)
