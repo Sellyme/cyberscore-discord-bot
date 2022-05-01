@@ -204,9 +204,14 @@ def scrape_leaderboard(type, force, idx):
 	or type == "Proof" or type == "Video" or type == "Speedrun" or type == "Level"):
 		players.pop(0)
 
+	#work out how many players we have to scrape
+	#with current site UI this should be a maximum of 100, but fewer if the leaderboard
+	#doesn't have 100 unique entrants
+	player_count = len(players)
+
 	output = ""
 	save_data = ""
-	for i in range(0,100): #iterate over the top 100 players
+	for i in range(0, player_count): #iterate over each player
 		player = players[i]
 
 		user_cell = player.find(class_="name").a
@@ -324,8 +329,9 @@ def scrape_leaderboard(type, force, idx):
 			score_change_str = ""
 		
 		#the idx paramater indicates the start of the range that's displayed in Discord
-		#we only have the top 100, so idx can be at most 90
-		idx = max(0, min(90, idx)) #clamps idx to 0-90 inclusive
+		#since we need to include 10 players, the start can be no more than player_count-10
+		#so we clamp the index between 0 and that
+		idx = max(0, min(player_count-10, idx))
 		
 		#a total of 10 users are displayed, starting at idx
 		if i in range(idx, idx+10):
