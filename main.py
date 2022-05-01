@@ -15,10 +15,12 @@ client = discord.Client()
 @client.event
 async def on_ready():
 	print(client.user, "has connected to Discord!")
-
-	loop = asyncio.get_event_loop()
-	loop.create_task(scrape_latest())
-	loop.create_task(scrape_leaderboards())
+	
+	if !firstLoad:
+		loop = asyncio.get_event_loop()
+		loop.create_task(scrape_latest())
+		loop.create_task(scrape_leaderboards())
+		firstLoad = False
 
 async def scrape_latest():
 	cs_channel = client.get_channel(config.cs_submissions_channel)
@@ -236,4 +238,5 @@ async def debug(message):
 				await channel.send("This would not have pinged a role")
 
 
+firstLoad = True #check this on_ready() and then set it to false so we never duplicate the threads
 client.run(TOKEN)
