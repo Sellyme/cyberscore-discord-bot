@@ -19,7 +19,7 @@ async def on_ready():
 	global firstLoad
 	print(client.user, "has connected to Discord!")
 	
-	if not firstLoad:
+	if firstLoad:
 		loop = asyncio.get_event_loop()
 		loop.create_task(scrape_latest())
 		loop.create_task(scrape_leaderboards())
