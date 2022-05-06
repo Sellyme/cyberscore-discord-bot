@@ -392,7 +392,7 @@ def seconds_to_time(seconds):
 	h = str(math.floor(seconds/3600)).zfill(2)
 	seconds = seconds % 3600
 	m = str(math.floor(seconds/60)).zfill(2)
-	seconds = seconds % 60
+	seconds = int(seconds % 60)
 	s = str(seconds).zfill(2)
 	return h+":"+m+":"+s
 
