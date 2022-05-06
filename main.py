@@ -12,11 +12,14 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 
 client = discord.Client()
 
+firstLoad = True #check this on_ready() and then set it to false so we never duplicate the threads
+
 @client.event
 async def on_ready():
+	global firstLoad
 	print(client.user, "has connected to Discord!")
 	
-	if !firstLoad:
+	if not firstLoad:
 		loop = asyncio.get_event_loop()
 		loop.create_task(scrape_latest())
 		loop.create_task(scrape_leaderboards())
@@ -242,6 +245,4 @@ async def debug(message):
 			forceParam = debugParam.lstrip("forcedaily ")
 			await scrape_leaderboard(forceParam)
 
-
-firstLoad = True #check this on_ready() and then set it to false so we never duplicate the threads
 client.run(TOKEN)
