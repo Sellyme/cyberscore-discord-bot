@@ -62,11 +62,11 @@ def scrape_latest():
 		country = flag_col.img.get('alt').lower()
 		flag_emoji = get_flag_emoji(country)
 		
-		user_name = name_col.a.get_text()
+		user_name = name_col.a.get_text().strip()
 		user_link = name_col.a['href']
 		user = "["+user_name+"]("+user_link+")"
 		
-		game_name = game_col.strong.get_text()
+		game_name = game_col.strong.get_text().strip()
 		game_link = game_col.a['href']
 		game = "["+game_name+"]("+CS_PREFIX+game_link+")"
 		
@@ -74,12 +74,12 @@ def scrape_latest():
 		#group names don't exist for all charts, so we need to check chart_links length
 		#and only construct group name if > 1
 		if(len(chart_links) > 1):
-			group_name = chart_links[0].get_text()
-			chart_name = chart_links[1].get_text()
+			group_name = chart_links[0].get_text().strip()
+			chart_name = chart_links[1].get_text().strip()
 			chart_link = chart_col.find_all('a')[1]['href']
 			chart = "["+group_name + " → " + chart_name+"]("+CS_PREFIX+chart_link+")"
 		else:
-			chart_name = chart_links[0].get_text()
+			chart_name = chart_links[0].get_text().strip()
 			chart_link = chart_col.a['href']
 			chart = "["+chart_name+"]("+CS_PREFIX+chart_link+")"
 		
@@ -110,14 +110,14 @@ def scrape_latest():
 		else:
 			medal = ""
 		
-		pos = pos_col.get_text().replace(" ","")
+		pos = pos_col.get_text().replace(" ","").strip()
 		csr = award_col.strong
 		#csr is not displayed for UC charts, so display Challenge Points instead
 		#for unranked charts (e.g., time played incrementals) display nothing)
 		if csr:
 			csr = csr.get_text().strip()
 		elif award_col.span:
-			csr = award_col.span.get_text()
+			csr = award_col.span.get_text().strip()
 		else:
 			csr = ""
 
