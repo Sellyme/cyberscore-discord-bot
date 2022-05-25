@@ -150,12 +150,24 @@ def scrape_latest():
 	return [cs_results, ps_results]
 
 #force indicates whether it was a forced update by a user, or a daily check
-def scrape_leaderboard(type, force, idx):
+#idx indicates the rank at which we're going to start printing to Discord
+#medalType is applicable only when type="Medal", and represents what we sort by
+#medalType 0 = plat, 1 = gold, 2 = silver, 3 = bronze (currently unimplemented)
+def scrape_leaderboard(type, force, idx, medalType = 0):
 	
 	#open previous leaderboard data
 	if type == "Starboard":
 		URL = "https://cyberscore.me.uk/scoreboards/starboard"
 		f = open("leaderboards/starboard.csv", "r+")
+	elif type == "Medal":
+		URL = "https://cyberscore.me.uk/scoreboards/medal"
+		f = open("leaderboards/medals.csv", "r+")
+		if medalType == 1:
+			URL += "?manual_sort=gold"
+		elif medalType == 2:
+			URL += "?manual_sort=silver"
+		elif medalType == 3:
+			URL += "?manual_sort=bronze"
 	elif type == "Arcade":
 		URL = "https://cyberscore.me.uk/scoreboards/arcade"
 		f = open("leaderboards/arcade.csv", "r+")
@@ -200,7 +212,8 @@ def scrape_leaderboard(type, force, idx):
 	
 	#Some boards have a header, so strip that
 	if (type == "Rainbow" or type == "Submissions" or type == "Incremental" 
-	or type == "Proof" or type == "Video" or type == "Speedrun" or type == "Level"):
+	or type == "Proof" or type == "Video" or type == "Speedrun" or type == "Level"
+	or type == "Medal"):
 		players.pop(0)
 
 	#work out how many players we have to scrape
@@ -229,6 +242,10 @@ def scrape_leaderboard(type, force, idx):
 		if type == "Starboard":
 			score_raw = player.find(class_="scoreboardCSR").get_text().strip()
 			score = float(score_raw.rstrip(" CSR").replace(",",""))
+		elif type == "Medal":
+			medals = player.find_all(class_="medals")
+			score_raw = medals[medalType].get_text().strip()
+			score = int(score_raw.replace(",",""))
 		elif type == "Arcade":
 			score_raw = player.find(class_="scoreboardCSR").get_text().strip()
 			score = int(score_raw.rstrip(" Tokens").replace(",",""))
@@ -277,7 +294,8 @@ def scrape_leaderboard(type, force, idx):
 		score_raw = ' '.join(score_raw.split())
 
 		#check position changes using the read file data
-		if user_name in previous_update:
+		#we don't store positions for medal table non-default sorts, so exclude that
+		if user_name in previous_update and not medalType:
 			user_data = previous_update[user_name]
 			pos_change = user_data['pos'] - (i+1)
 			score_change = score - user_data['score']
@@ -293,7 +311,10 @@ def scrape_leaderboard(type, force, idx):
 			else:
 				pos_change_str = "▼"+str(abs(pos_change))+(" "*8)
 		else:
-			pos_change_str = ":new:"+(" "*8)
+			if medalType:
+				pos_change_str = ""
+			else:
+				pos_change_str = ":new:"+(" "*8)
 			score_change = 0
 
 		#Starboard+Challenge+Level requires decimal formatting for output, Speedrun requires time
@@ -351,7 +372,8 @@ def scrape_leaderboard(type, force, idx):
 
 	#only save the data if we did a daily update, so that score diffs are always relative
 	#to midnight UTC that day, and can't be disrupted by debugging
-	if(not force): #adjust this to force-overwrite
+	#we also avoid saving if we did a medal table scrape with a non-default sort
+	if(not force and not medalType): #adjust this to force-overwrite
 		save_leaderboard(save_data, f)
 	f.close()
 

@@ -68,6 +68,7 @@ async def scrape_leaderboards():
 
 			#if any of the important leaderboards have position changes, track them
 			starboard_change = await scrape_leaderboard("Starboard")
+			medal_change = await scrape_leaderboard("Medal")
 			rainbow_change = await scrape_leaderboard("Rainbow")
 			arcade_change = await scrape_leaderboard("Arcade")
 			solution_change = await scrape_leaderboard("Solution")
@@ -78,7 +79,7 @@ async def scrape_leaderboards():
 			proof_change = await scrape_leaderboard("Proof")
 			video_change = await scrape_leaderboard("Video")
 			
-			top10_change = starboard_change or rainbow_change or arcade_change or solution_change or challenge_change or collection_change or proof_change or video_change or speedrun_change
+			top10_change = starboard_change or medal_change or rainbow_change or arcade_change or solution_change or challenge_change or collection_change or proof_change or video_change or speedrun_change
 
 			#and then also run the remaining leaderboards
 			await scrape_leaderboard("Level")
@@ -102,10 +103,10 @@ async def scrape_leaderboards():
 		await asyncio.sleep(config.leaderboard_frequency)
 		
 
-async def scrape_leaderboard(type, force = False, idx = 0, channel_id = config.leaderboard_channel):
+async def scrape_leaderboard(type, force = False, idx = 0, channel_id = config.leaderboard_channel, medalType = 0):
 	channel = client.get_channel(channel_id)
 
-	results = scrape.scrape_leaderboard(type, force, idx)
+	results = scrape.scrape_leaderboard(type, force, idx, medalType)
 	#result should be a pure string
 	print(results)
 	if type == "Submissions" and not force:
@@ -116,6 +117,14 @@ async def scrape_leaderboard(type, force = False, idx = 0, channel_id = config.l
 		name = "Video Proof"
 	elif type == "Challenge":
 		name = "User Challenge"
+	elif type == "Medal":
+		name = "Medal Table"
+		if medalType == 1:
+			name += " (Gold)"
+		elif medalType == 2:
+			name += " (Silver)"
+		elif medalType == 3:
+			name += " (Bronze)"
 	else:
 		name = type
 
@@ -162,6 +171,8 @@ async def on_message(message):
 
 	if message.content.startswith("!mainboard") or message.content.startswith("!starboard") or message.content.startswith("!csr"):
 		await handle_generic_leaderboard(message, "Starboard")
+	elif message.content.startswith("!medal"):
+		await handle_generic_leaderboard(message, "Medal")
 	elif message.content.startswith("!rainbow") or message.content.startswith("!rp"):
 		await handle_generic_leaderboard(message, "Rainbow")
 	elif message.content.startswith("!arcade") or message.content.startswith("!tokens"):
@@ -190,16 +201,26 @@ async def on_message(message):
 #todo - genericise these
 async def handle_generic_leaderboard(message, type):
 	idx = 0 #default parameter
+	medalType = 0 #default parameter (plat)
 	args = get_args(message)
 
 	if len(args) > 1:
 		#if there was a parameter added and we can parse that
-		idxParam =  args[1]
+		idxParam = args[1]
 		if idxParam.isnumeric():
 			#isnumeric excludes negatives or decimals, which is good for this use case
 			idx = int(idxParam) - 1
+		
+		#handle medal sort order params
+		if type == "Medal":
+			if "-g" in args:
+				medalType = 1
+			elif "-s" in args:
+				medalType = 2
+			elif "-b" in args:
+				medalType = 3
 
-	await scrape_leaderboard(type, True, idx, message.channel.id)
+	await scrape_leaderboard(type, True, idx, message.channel.id, medalType)
 
 async def handle_submitters(message):
 	days = 1 #default parameter
