@@ -10,6 +10,9 @@ def scrape_latest():
 	URL = "https://cyberscore.me.uk/latest-submissions"
 	cs_results = [] #messages to output to Cyberscore Discord
 	ps_results = [] #messages to output to New Pokemon Snap Discord
+	warn_results = [] #messages to output to a staff channel on certain keywords
+	#any of these keywords occurring in a comment should have the record checked for validity
+	warn_keywords = ["emu", "emulator", "emulation", "emulated", "rom", "vba"]
 
 	#perform web scrape
 	page = requests.get(URL)
@@ -136,6 +139,15 @@ def scrape_latest():
 		if game_link == "/game/2785":
 			ps_results.append(output)
 		
+		#we need to check the comment for any instance of certain words
+		#to avoid having to account for punctuation, strip everything that isn't a-z or whitespace
+		comment_stripped = re.sub(r'[^a-z ]+', '', comment.lower())
+		comment_array = comment_stripped.split(" ") #and split all the words into components
+		#check if the logical AND of the two word sets contains any elements
+		comment_flag = bool(set(comment_array) & set(warn_keywords))
+		if comment_flag:
+			warn_results.append(output)
+
 
 	#once we've iterated over everything we can save the last update date
 	if new_update > last_update:
@@ -147,7 +159,7 @@ def scrape_latest():
 		print(now.strftime("%H:%M:%S"), "no updates")
 	f.close()
 	
-	return [cs_results, ps_results]
+	return [cs_results, ps_results, warn_results]
 
 #force indicates whether it was a forced update by a user, or a daily check
 #idx indicates the rank at which we're going to start printing to Discord

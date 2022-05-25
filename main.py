@@ -28,12 +28,15 @@ async def on_ready():
 async def scrape_latest():
 	cs_channel = client.get_channel(config.cs_submissions_channel)
 	ps_channel = client.get_channel(config.ps_submissions_channel)
+	cs_mod_channel = client.get_channel(config.cs_mod_channel)
 
 	while True:
 		results = scrape.scrape_latest()
 		cs_results = results[0]
 		ps_results = results[1]
+		warn_results = results[2]
 
+		#Messages to output to Cyberscore Discord
 		for msg in cs_results:
 			print(msg)
 			
@@ -43,12 +46,19 @@ async def scrape_latest():
 			#ideally we should add handling for this at some point and retry the message
 			#as otherwise the message being sent just fails and is skipped
 			await cs_channel.send(embed=embed)
-			
+		
+		#Messages to output to Pokemon Snap Discord
 		for msg in ps_results:
 			#create embed for Discord
 			embed = discord.Embed(description=msg)
 			await ps_channel.send(embed=embed)
 		
+		#Messages to output to Cyberscore mod logs
+		for msg in warn_results:
+			#create embed for Discord
+			embed = discord.Embed(description=msg)
+			await cs_mod_channel.send(embed=embed)
+
 		await asyncio.sleep(config.submissions_frequency)
 
 async def scrape_leaderboards():

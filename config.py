@@ -1,5 +1,6 @@
 test_channel = 930473063043178586
 cs_submissions_channel = 930586269237530654 #Cyberscore `#submissions`
+cs_mod_channel = 199790440784986122 #Cyberscore `#staff-central`
 ps_submissions_channel = 936392388102991892 #Pokemon Snap `#cyberscore-submissions`
 leaderboard_channel = 930981438638133269
 
