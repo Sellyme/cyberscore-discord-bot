@@ -12,7 +12,7 @@ def scrape_latest():
 	ps_results = [] #messages to output to New Pokemon Snap Discord
 	warn_results = [] #messages to output to a staff channel on certain keywords
 	#any of these keywords occurring in a comment should have the record checked for validity
-	warn_keywords = ["emu", "emulator", "emulation", "emulated", "rom", "vba"]
+	warn_keywords = ["emu", "emulator", "emulation", "emulated", "rom", "vba", "dolphin", "desmume", "retroarch", "p64", "swanstation", "mesen", "snes9x", "zsnes", "mgba", "libretro", "retropie", "melonds", "mame", "z64", "iso", "stella", "ppsspp", "epsxe", "gliden", "jabo"]
 
 	#perform web scrape
 	page = requests.get(URL)
