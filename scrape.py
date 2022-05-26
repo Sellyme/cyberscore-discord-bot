@@ -7,7 +7,7 @@ import math
 CS_PREFIX = "https://cyberscore.me.uk"
 
 def scrape_latest():
-	URL = "https://cyberscore.me.uk/latest-submissions"
+	URL = CS_PREFIX + "/latest-submissions"
 	cs_results = [] #messages to output to Cyberscore Discord
 	ps_results = [] #messages to output to New Pokemon Snap Discord
 	warn_results = [] #messages to output to a staff channel on certain keywords
