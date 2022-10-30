@@ -169,22 +169,26 @@ async def scrape_leaderboard(type, force = False, idx = 0, channel_id = config.l
 	#and indicate whether or not there was a change in the top 10
 	return ("▲" in results or "▼" in results or ":new:" in results)
 
-async def top_submitters(days = 1, channel_id = config.leaderboard_channel):
+async def top_submitters(days = 1, idx = 0, channel_id = config.leaderboard_channel):
 	channel = client.get_channel(channel_id)
 	
-	results = scrape.scrape_top_submitters(days)
-	#result should be a pure string
-	print(results)
-	
+	results = scrape.scrape_top_submitters(days, idx) #results is an array of [embed_body, range_string]
+	embed_body = results[0]
+	print(results[0])
+
 	#generate embed header
 	if days == 1:
 		fieldname = "Top submitters for today"
 	else:
 		fieldname = "Top submitters for the last " + str(days) + " days"
 	
+	#if there was a non-default idx set (e.g., not just looking at top 10 users) additionally print what range we're looking at
+	if idx > 0:
+		fieldname += " ("+results[1]+")"
+
 	#create embed for Discord
 	embed = discord.Embed()
-	embed.add_field(name=fieldname, value=results)
+	embed.add_field(name=fieldname, value=results[0])
 	embed.timestamp = datetime.utcnow()
 	await channel.send(embed=embed)
 
@@ -267,12 +271,22 @@ async def handle_generic_leaderboard(message, type):
 	await scrape_leaderboard(type, True, idx, message.channel.id, sortParam)
 
 async def handle_submitters(message):
-	days = 1 #default parameter
+	days = 1 #default
+	idx = 0 #default
 	args = get_args(message)
 
+	#if there was a parameter added we need to change the defaults
 	if len(args) > 1:
-		#if there was a parameter added and we can parse that
+		#first potential parameter is the number of days we want (e.g., "!subs 7" shows top submitters in the last week)
 		daysParam = args[1]
+		
+		#if there was a second parameter added, use that as where to look on the leaderboard
+		#e.g. "!subs ytd 20" shows positions 20-29 for most subs year-to-date
+		if len(args) > 2:
+			idxParam = args[2]
+			if idxParam.isnumeric():
+				idx = int(idxParam) - 1
+
 		if daysParam.isnumeric():
 			#isnumeric excludes negatives or decimals, which is good for this use case
 			days = int(daysParam)
@@ -281,14 +295,12 @@ async def handle_submitters(message):
 			days = int(format(datetime.utcnow(), '%j'))
 		elif daysParam == "all":
 			idx = 0 #default parameter
-			if len(args) > 2: #if the arguments were e.g., [!submitters,all,30]
-				idxParam = args[2]
-				if idxParam.isnumeric():
-					idx = int(idxParam) - 1
 			await scrape_leaderboard("Submissions", True, idx, message.channel.id)
 			return
+		#we ostensibly support daysParam being "today", e.g., "!subs today 15" to get today's leaderboard starting at 15th
+		#but we don't actually need to code anything to support this, since falling through to the default case works fine
 
-	await top_submitters(days, message.channel.id)
+	await top_submitters(days, idx, message.channel.id)
 
 def get_args(message):
 	args = message.content.split(" ")

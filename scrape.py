@@ -410,7 +410,7 @@ def scrape_leaderboard(type, force, idx, sortParam = 0):
 
 	return output
 
-def scrape_top_submitters(days):
+def scrape_top_submitters(days, idx):
 	URL = "https://cyberscore.me.uk/latest_subs_stats.php?updates=no&days=" + str(days)
 
 	#perform web scrape
@@ -418,10 +418,16 @@ def scrape_top_submitters(days):
 	soup = BeautifulSoup(page.content, "html.parser")
 	players = list(soup.find(id="pageright").find("table").find_all("tr"))
 	
-	#iterate over the top 10
-	i = 0
+	#we want to get the first 10 players starting at idx
+	#if fewer than 10 players exist, we also take some before idx if possible
+	#e.g., if we start at 20th and only 25 players exist, we'll actually end up printing 16th-25th
+	#also note that idx is already zero-indexed as that conversion happened on processing the parameters
+	if len(players) > 10 and idx > 0:
+		idx = min(idx, len(players)-10)
+	i = max(0, idx)
+
 	output = ""
-	while i < min(10, len(players)):
+	while i < min(10+idx, len(players)):
 		player = players[i]
 		cells = list(player.find_all("td"))
 		
@@ -431,7 +437,14 @@ def scrape_top_submitters(days):
 
 		output += "["+user_name+"]("+user_link+")" + " - " + user_score + " submissions\n"
 		i+=1
-	return output
+	
+	#generate the range string for what section of the list we generated
+	range_min = idx+1 #we want to output the first entry as #1, not #0
+	range_max = min(idx+10, len(players))
+	range_string = "#"+str(range_min)+"–#"+str(range_max)+" of "+str(len(players))
+
+	#and output results
+	return [output, range_string]
 
 def time_to_seconds(time_str):
     h, m, s = time_str.split(':')
