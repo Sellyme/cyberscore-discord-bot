@@ -410,38 +410,50 @@ def scrape_leaderboard(type, force, idx, sortParam = 0):
 
 	return output
 
-def scrape_top_submitters(days, idx):
+def scrape_top_submitters(days, idx, type): #type = "user" or "game"
 	URL = "https://cyberscore.me.uk/latest_subs_stats.php?updates=no&days=" + str(days)
 
 	#perform web scrape
 	page = requests.get(URL)
 	soup = BeautifulSoup(page.content, "html.parser")
-	players = list(soup.find(id="pageright").find("table").find_all("tr"))
-	
-	#we want to get the first 10 players starting at idx
-	#if fewer than 10 players exist, we also take some before idx if possible
-	#e.g., if we start at 20th and only 25 players exist, we'll actually end up printing 16th-25th
+
+	if type == "user":
+		entries = list(soup.find(id="pageright").find("table").find_all("tr"))
+	elif type == "game":
+		entries = list(soup.find(id="pageleft").find("table").find_all("tr"))
+		#games have a header row while players don't, so pop that
+		entries.pop(0)
+
+	#we want to get the first 10 entries starting at idx
+	#if fewer than 10 entries exist, we also take some before idx if possible
+	#e.g., if we start at 20th and only 25 entries exist, we'll actually end up printing 16th-25th
 	#also note that idx is already zero-indexed as that conversion happened on processing the parameters
-	if len(players) > 10 and idx > 0:
-		idx = min(idx, len(players)-10)
-	i = max(0, idx)
-
 	output = ""
-	while i < min(10+idx, len(players)):
-		player = players[i]
-		cells = list(player.find_all("td"))
-		
-		user_name = cells[0].get_text().strip()
-		user_link = cells[0].a['href']
-		user_score = cells[1].get_text().strip()
+	if len(entries) > 10 and idx > 0:
+		idx = min(idx, len(entries)-10)
 
-		output += "["+user_name+"]("+user_link+")" + " - " + user_score + " submissions\n"
+	i = max(0, idx)
+	while i < min(10+idx, len(entries)):
+		entry = entries[i]
+		cells = list(entry.find_all("td"))
+
+		entry_name = cells[0].get_text().strip()
+		entry_link = cells[0].a['href']
+		#users have score in cell 1, games have *records* there so we need to go to cell 2
+		if type == "user":
+			entry_score = cells[1].get_text().strip()
+		elif type == "game":
+			entry_score = cells[2].get_text().strip()
+			#also for some reason users have an explicit domain but games don't, so add that if needed
+			entry_link = "https://cyberscore.me.uk" + entry_link
+
+		output += "["+entry_name+"]("+entry_link+")" + " - " + entry_score + " submissions\n"
 		i+=1
-	
+
 	#generate the range string for what section of the list we generated
 	range_min = idx+1 #we want to output the first entry as #1, not #0
-	range_max = min(idx+10, len(players))
-	range_string = "#"+str(range_min)+"–#"+str(range_max)+" of "+str(len(players))
+	range_max = min(idx+10, len(entries))
+	range_string = "#"+str(range_min)+"–#"+str(range_max)+" of "+str(len(entries))
 
 	#and output results
 	return [output, range_string]

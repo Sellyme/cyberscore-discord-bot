@@ -169,18 +169,23 @@ async def scrape_leaderboard(type, force = False, idx = 0, channel_id = config.l
 	#and indicate whether or not there was a change in the top 10
 	return ("▲" in results or "▼" in results or ":new:" in results)
 
-async def top_submitters(days = 1, idx = 0, channel_id = config.leaderboard_channel):
+async def top_submitters(days = 1, idx = 0, channel_id = config.leaderboard_channel, type = "user"): #type = "user" or "game"
 	channel = client.get_channel(channel_id)
 	
-	results = scrape.scrape_top_submitters(days, idx) #results is an array of [embed_body, range_string]
+	results = scrape.scrape_top_submitters(days, idx, type) #results is an array of [embed_body, range_string]
 	embed_body = results[0]
 	print(results[0])
 
 	#generate embed header
+	if type == "user":
+		noun = "submitter"
+	elif type == "game":
+		noun = "game"
+
 	if days == 1:
-		fieldname = "Top submitters for today"
+		fieldname = "Top " + noun + "s for today"
 	else:
-		fieldname = "Top submitters for the last " + str(days) + " days"
+		fieldname = "Top " + noun + "s for the last " + str(days) + " days"
 	
 	#if there was a non-default idx set (e.g., not just looking at top 10 users) additionally print what range we're looking at
 	if idx > 0:
@@ -229,7 +234,9 @@ async def on_message(message):
 	elif message.content.startswith("!video") or message.content.startswith("!vp"):
 		await handle_generic_leaderboard(message, "Video")
 	elif message.content.startswith("!sub"):
-		await handle_submitters(message)
+		await handle_submitters(message, "user")
+	elif message.content.startswith("!gamesub") or message.content.startswith("!gamessub"):
+		await handle_submitters(message, "game")
 	elif message.content.startswith("!debug"):
 		await debug(message)
 
@@ -270,7 +277,7 @@ async def handle_generic_leaderboard(message, type):
 
 	await scrape_leaderboard(type, True, idx, message.channel.id, sortParam)
 
-async def handle_submitters(message):
+async def handle_submitters(message, type): #type is either "user" or "game"
 	days = 1 #default
 	idx = 0 #default
 	args = get_args(message)
@@ -294,13 +301,16 @@ async def handle_submitters(message):
 			#year-to-date stats, so get the current day of year index
 			days = int(format(datetime.utcnow(), '%j'))
 		elif daysParam == "all":
+			if type == "game":
+				await report_error(message.channel.id, "'All' search is not currently supported for game submissions")
+				return
 			idx = 0 #default parameter
 			await scrape_leaderboard("Submissions", True, idx, message.channel.id)
 			return
 		#we ostensibly support daysParam being "today", e.g., "!subs today 15" to get today's leaderboard starting at 15th
 		#but we don't actually need to code anything to support this, since falling through to the default case works fine
 
-	await top_submitters(days, idx, message.channel.id)
+	await top_submitters(days, idx, message.channel.id, type)
 
 def get_args(message):
 	args = message.content.split(" ")
@@ -312,14 +322,12 @@ async def debug(message):
 	channel = client.get_channel(message.channel.id)
 	if len(message.content) > 7:
 		debugParam = message.content.lstrip("!debug ")
-		if debugParam.startswith("roleping"):
-			debugData = debugParam.lstrip("roleping")
-			if "▲" in debugData or "▼" in debugData or ":new:" in debugData:
-				await channel.send("<@&951246251427520512>")
-			else:
-				await channel.send("This would not have pinged a role")
-		elif debugParam.startswith("forcedaily "):
+		if debugParam.startswith("forcedaily "):
 			forceParam = debugParam.lstrip("forcedaily ")
 			await scrape_leaderboard(forceParam)
+
+async def report_error(channel_id, message):
+	channel = client.get_channel(channel_id)
+	await channel.send(message)
 
 client.run(TOKEN)
