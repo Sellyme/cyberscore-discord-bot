@@ -242,6 +242,7 @@ async def on_message(message):
 
 #todo - genericise these
 async def handle_generic_leaderboard(message, type):
+	print("Handling message: '" + message.content + "'")
 	idx = 0 #default parameter
 	sortParam = 0 #default parameter (plats for medal table, points for trophy table)
 	args = get_args(message)
@@ -275,6 +276,7 @@ async def handle_generic_leaderboard(message, type):
 			elif "-5" in args:
 				sortParam = 6
 
+	print("Scraping " + type + " leaderboard with idx " + str(idx) + " and sortParam " + str(sortParam)) 
 	await scrape_leaderboard(type, True, idx, message.channel.id, sortParam)
 
 async def handle_submitters(message, type): #type is either "user" or "game"
@@ -304,12 +306,13 @@ async def handle_submitters(message, type): #type is either "user" or "game"
 			if type == "game":
 				await report_error(message.channel.id, "'All' search is not currently supported for game submissions")
 				return
-			idx = 0 #default parameter
+			print("Scraping Submissions leaderboard with idx " + str(idx))
 			await scrape_leaderboard("Submissions", True, idx, message.channel.id)
 			return
 		#we ostensibly support daysParam being "today", e.g., "!subs today 15" to get today's leaderboard starting at 15th
 		#but we don't actually need to code anything to support this, since falling through to the default case works fine
 
+	print("Scraping top submitters for " + str(days) + " days with idx " + str(idx))
 	await top_submitters(days, idx, message.channel.id, type)
 
 def get_args(message):
