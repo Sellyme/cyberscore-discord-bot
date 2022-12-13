@@ -17,6 +17,7 @@ firstLoad = True #check this on_ready() and then set it to false so we never dup
 @client.event
 async def on_ready():
 	global firstLoad
+	
 	print(client.user, "has connected to Discord!")
 	
 	if firstLoad:
@@ -31,88 +32,96 @@ async def scrape_latest():
 	cs_mod_channel = client.get_channel(config.cs_mod_channel)
 
 	while True:
-		results = scrape.scrape_latest()
-		cs_results = results[0]
-		ps_results = results[1]
-		warn_results = results[2]
+		try:
+			results = scrape.scrape_latest()
+			cs_results = results[0]
+			ps_results = results[1]
+			warn_results = results[2]
 
-		#Messages to output to Cyberscore Discord
-		for msg in cs_results:
-			print(msg)
+			#Messages to output to Cyberscore Discord
+			for msg in cs_results:
+				print(msg)
+				
+				#create embed for Discord
+				embed = discord.Embed(description=msg)
+				#this can often fail with a 504 HTTPException if Discord is having server issues
+				#ideally we should add handling for this at some point and retry the message
+				#as otherwise the message being sent just fails and is skipped
+				await cs_channel.send(embed=embed)
 			
-			#create embed for Discord
-			embed = discord.Embed(description=msg)
-			#this can often fail with a 504 HTTPException if Discord is having server issues
-			#ideally we should add handling for this at some point and retry the message
-			#as otherwise the message being sent just fails and is skipped
-			await cs_channel.send(embed=embed)
-		
-		#Messages to output to Pokemon Snap Discord
-		for msg in ps_results:
-			#create embed for Discord
-			embed = discord.Embed(description=msg)
-			await ps_channel.send(embed=embed)
-		
-		#Messages to output to Cyberscore mod logs
-		for msg in warn_results:
-			#create embed for Discord
-			embed = discord.Embed(description=msg)
-			await cs_mod_channel.send(embed=embed)
-
-		await asyncio.sleep(config.submissions_frequency)
+			#Messages to output to Pokemon Snap Discord
+			for msg in ps_results:
+				#create embed for Discord
+				embed = discord.Embed(description=msg)
+				await ps_channel.send(embed=embed)
+			
+			#Messages to output to Cyberscore mod logs
+			for msg in warn_results:
+				#create embed for Discord
+				embed = discord.Embed(description=msg)
+				await cs_mod_channel.send(embed=embed)
+		except Exception as e:
+			print(e)
+			print("Exception occurred in latest subs scrape")
+		finally:
+			await asyncio.sleep(config.submissions_frequency)
 
 async def scrape_leaderboards():
 	while True:
-		f = open("last_leaderboards", "r+")
-		last_scrape = f.read()
-		last_scrape_dt = datetime.strptime(last_scrape, "%Y-%m-%d %H:%M:%S")
-		lock_scrape = last_scrape_dt + timedelta(0.1)
-		next_scrape = last_scrape_dt + timedelta(1)
-	
-		print("Checking leaderboard scrape")
-		#we want the leaderboard scrape to only run around midnight UTC, so init a datetime
-		now = datetime.utcnow()
-		#and then check that it's 12:xx am (or if we've missed a cycle somehow)
-		if (now.hour == 0 and lock_scrape < now) or next_scrape < now:
-			print("Running leaderboard scrape")
-
-			#if any of the important leaderboards have position changes, track them
-			starboard_change = await scrape_leaderboard("Starboard")
-			medal_change = await scrape_leaderboard("Medal")
-			trophy_change = await scrape_leaderboard("Trophy")
-			rainbow_change = await scrape_leaderboard("Rainbow")
-			arcade_change = await scrape_leaderboard("Arcade")
-			solution_change = await scrape_leaderboard("Solution")
-			challenge_change = await scrape_leaderboard("Challenge")
-			collection_change = await scrape_leaderboard("Collectible")
-			incremental_change = await scrape_leaderboard("Incremental")
-			speedrun_change = await scrape_leaderboard("Speedrun")
-			proof_change = await scrape_leaderboard("Proof")
-			video_change = await scrape_leaderboard("Video")
-			
-			top10_change = starboard_change or medal_change or trophy_change or rainbow_change or arcade_change or solution_change or challenge_change or collection_change or proof_change or video_change or speedrun_change
-
-			#and then also run the remaining leaderboards
-			await scrape_leaderboard("Level")
-			await scrape_leaderboard("Submissions")
-			await top_submitters(1)
-
-			#save the most recent scrape
-			f.seek(0)
-			f.write(now.strftime("%Y-%m-%d %H:%M:%S"))
-			f.truncate()
-			
-			#finally, print out a role ping if there was a positional change
-			if top10_change:
-				channel = client.get_channel(config.leaderboard_channel)
-				await channel.send("<@&951246251427520512>")
-
-		f.close()
-
-
-		#and re-check hourly
-		await asyncio.sleep(config.leaderboard_frequency)
+		try:
+			f = open("last_leaderboards", "r+")
+			last_scrape = f.read()
+			last_scrape_dt = datetime.strptime(last_scrape, "%Y-%m-%d %H:%M:%S")
+			lock_scrape = last_scrape_dt + timedelta(0.1)
+			next_scrape = last_scrape_dt + timedelta(1)
 		
+			print("Checking leaderboard scrape")
+			#we want the leaderboard scrape to only run around midnight UTC, so init a datetime
+			now = datetime.utcnow()
+			#and then check that it's 12:xx am (or if we've missed a cycle somehow)
+			if (now.hour == 0 and lock_scrape < now) or next_scrape < now:
+				print("Running leaderboard scrape")
+
+				#if any of the important leaderboards have position changes, track them
+				starboard_change = await scrape_leaderboard("Starboard")
+				medal_change = await scrape_leaderboard("Medal")
+				trophy_change = await scrape_leaderboard("Trophy")
+				rainbow_change = await scrape_leaderboard("Rainbow")
+				arcade_change = await scrape_leaderboard("Arcade")
+				solution_change = await scrape_leaderboard("Solution")
+				challenge_change = await scrape_leaderboard("Challenge")
+				collection_change = await scrape_leaderboard("Collectible")
+				incremental_change = await scrape_leaderboard("Incremental")
+				speedrun_change = await scrape_leaderboard("Speedrun")
+				proof_change = await scrape_leaderboard("Proof")
+				video_change = await scrape_leaderboard("Video")
+				
+				top10_change = starboard_change or medal_change or trophy_change or rainbow_change or arcade_change or solution_change or challenge_change or collection_change or proof_change or video_change or speedrun_change
+
+				#and then also run the remaining leaderboards
+				await scrape_leaderboard("Level")
+				await scrape_leaderboard("Submissions")
+				await top_submitters(1)
+
+				#save the most recent scrape
+				f.seek(0)
+				f.write(now.strftime("%Y-%m-%d %H:%M:%S"))
+				f.truncate()
+				
+				#finally, print out a role ping if there was a positional change
+				if top10_change:
+					channel = client.get_channel(config.leaderboard_channel)
+					await channel.send("<@&951246251427520512>")
+
+			f.close()
+		except Exception as e:
+			print(e)
+			print("Exception occurred in leaderboards scrape")
+		finally:
+			#and re-check hourly
+			await asyncio.sleep(config.leaderboard_frequency)
+
+
 
 async def scrape_leaderboard(type, force = False, idx = 0, channel_id = config.leaderboard_channel, sortParam = 0):
 	channel = client.get_channel(channel_id)
@@ -240,7 +249,6 @@ async def on_message(message):
 	elif message.content.startswith("!debug"):
 		await debug(message)
 
-#todo - genericise these
 async def handle_generic_leaderboard(message, type):
 	print("Handling message: '" + message.content + "'")
 	idx = 0 #default parameter
@@ -276,7 +284,7 @@ async def handle_generic_leaderboard(message, type):
 			elif "-5" in args:
 				sortParam = 6
 
-	print("Scraping " + type + " leaderboard with idx " + str(idx) + " and sortParam " + str(sortParam)) 
+	print("Scraping " + type + " leaderboard with idx " + str(idx) + " and sortParam " + str(sortParam))
 	await scrape_leaderboard(type, True, idx, message.channel.id, sortParam)
 
 async def handle_submitters(message, type): #type is either "user" or "game"
