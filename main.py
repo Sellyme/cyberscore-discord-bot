@@ -1,16 +1,17 @@
 import os #reading auth file
 import discord #discord bot
 from dotenv import load_dotenv #discord auth
-import asyncio
-
-import scrape
-import config
 from datetime import datetime, timedelta
+import asyncio #allow multiple threads
+import inflect #used for converting integers to ordinal positions
+
+import scrape, config #custom imports
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 
 client = discord.Client()
+infeng = inflect.engine()
 
 firstLoad = True #check this on_ready() and then set it to false so we never duplicate the threads
 
@@ -206,6 +207,47 @@ async def top_submitters(days = 1, idx = 0, channel_id = config.leaderboard_chan
 	embed.timestamp = datetime.utcnow()
 	await channel.send(embed=embed)
 
+
+async def profile_stats(message):
+	channel = client.get_channel(message.channel.id)
+	#todo - actually parse username from message
+	
+	sub_milestones = [25,50,100,250,500,1000,2500,5000,10000,25000,50000,100000]
+	leadership_awards = [100,10,3,2,1]
+	user_data = scrape.scrape_profile("Sellyme")
+
+	embed = discord.Embed()
+
+	for key in user_data:
+		field_name = key.capitalize()
+		field_text = ""
+		if key == "username" or key == "user_id":
+			continue
+		elif key == "positions":
+			for board in user_data[key]:
+				position = user_data[key][board]
+				field_text += "**"+board.capitalize() + "**: " + infeng.ordinal(position) + "\n"
+		else:
+			for board in user_data[key]:
+				score = user_data[key][board]
+				field_text += "**"+board.capitalize() + "**: " + str(score)
+				#find the next medal up
+				max_milestone = sub_milestones[len(sub_milestones)-1]
+				for target in sub_milestones:
+					if score < target: #we've found the first milestone the user hasn't reached:
+						max_milestone = target
+						break
+					#and if we loop through every milestone and the score isn't lower than any of them
+					#we fall through to the default (which is the final milestone in the list)
+				field_text += "/" + str(max_milestone) + "\n"
+		embed.add_field(name=field_name, value=field_text, inline=True)
+
+	user_avatar = "https://cyberscore.me.uk/userpics/" + str(user_data["user_id"]) + ".jpg"
+	embed.set_author(name="Sellyme", icon_url=user_avatar)
+
+	embed.timestamp = datetime.utcnow()
+	await channel.send(embed=embed)
+
 @client.event
 async def on_message(message):
 	#ignore messages from bots to avoid double-posting on PluralKit etc.
@@ -248,6 +290,8 @@ async def on_message(message):
 		await handle_submitters(message, "game")
 	elif message.content.startswith("!debug"):
 		await debug(message)
+	elif message.content.startswith("!profile"):
+		await profile_stats(message)
 
 async def handle_generic_leaderboard(message, type):
 	print("Handling message: '" + message.content + "'")
@@ -336,6 +380,8 @@ async def debug(message):
 		if debugParam.startswith("forcedaily "):
 			forceParam = debugParam.lstrip("forcedaily ")
 			await scrape_leaderboard(forceParam)
+
+
 
 async def report_error(channel_id, message):
 	channel = client.get_channel(channel_id)

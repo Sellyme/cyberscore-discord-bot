@@ -457,6 +457,63 @@ def scrape_top_submitters(days, idx, type): #type = "user" or "game"
 	#and output results
 	return [output, range_string]
 
+def scrape_profile(username):
+	#hardcode values just so we can start to build an embed
+	user_data = {
+		"username": "Sellyme",
+		"user_id": 17598,
+		"records": {
+			"total":46551,
+			"medal":21100,
+			"speedrun":11,
+			"solution":8242,
+			"unranked":2443,
+			"collectible":2508,
+			"incremental":8762,
+			"challenge":548,
+			"arcade":7917
+		},
+		"proofs": {
+			"total":31982,
+			"medal":17336,
+			"speedrun":5,
+			"solution":5528,
+			"unranked":1484,
+			"collectible":1919,
+			"incremental":5540,
+			"challenge":33,
+			"arcade":2266
+		},
+		"video proofs": {
+			"total":1271,
+			"medal":1190,
+			"speedrun":0,
+			"solution":73,
+			"unranked":1,
+			"collectible":0,
+			"incremental":1,
+			"challenge":3,
+			"arcade":4
+		},
+		"positions": {
+			"starboard":2,
+			"medal":4,
+			"trophy":19,
+			"rainbow":1,
+			"arcade":2,
+			"speedrun":194,
+			"solution":1,
+			"challenge":4,
+			"collectible":1,
+			"incremental":1,
+			"submissions":1,
+			"proof":1,
+			"video":1
+		}
+	}
+
+	return user_data
+	
 
 #file is an actual file hook, *not* a path
 def load_leaderboard(file):
