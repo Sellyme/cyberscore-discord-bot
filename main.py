@@ -240,7 +240,7 @@ async def on_message(message):
 		await handle_generic_leaderboard(message, "Speedrun")
 	elif message.content.startswith("!proof"):
 		await handle_generic_leaderboard(message, "Proof")
-	elif message.content.startswith("!video") or message.content.startswith("!vp"):
+	elif message.content.startswith("!vid") or message.content.startswith("!vp"):
 		await handle_generic_leaderboard(message, "Video")
 	elif message.content.startswith("!sub"):
 		await handle_submitters(message, "user")
