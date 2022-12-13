@@ -1,8 +1,7 @@
-import requests
+import requests, re, math
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
-import re
-import math
+import cmfn #common functions
 
 CS_PREFIX = "https://cyberscore.me.uk"
 
@@ -63,7 +62,7 @@ def scrape_latest():
 		award_col = columns[8]
 
 		country = flag_col.img.get('alt').lower()
-		flag_emoji = get_flag_emoji(country)
+		flag_emoji = cmfn.get_flag_emoji(country)
 		
 		user_name = name_col.a.get_text().strip()
 		user_link = name_col.a['href']
@@ -316,7 +315,7 @@ def scrape_leaderboard(type, force, idx, sortParam = 0):
 			score = int(score_raw.replace(",",""))
 		elif type == "Speedrun":
 			score_raw = player.find(class_="medals").get_text().strip()
-			score = time_to_seconds(score_raw)
+			score = cmfn.time_to_seconds(score_raw)
 
 		#in some cases score_raw includes excess whitespace
 		#e.g., "382,193     Brain Power"
@@ -359,14 +358,14 @@ def scrape_leaderboard(type, force, idx, sortParam = 0):
 			if score_change:
 				score_change_str = " ({:+,.1f})".format(score_change)
 		elif type == "Speedrun":
-			score_str = seconds_to_time(score)
+			score_str = cmfn.seconds_to_time(score)
 			if score_change:
 				symbol = ""
 				if score_change > 0:
 					symbol = "+"
 				elif score_change < 0:
 					symbol = "-"
-				score_change_str = " ("+symbol+seconds_to_time(score_change)+")"
+				score_change_str = " ("+symbol+cmfn.seconds_to_time(score_change)+")"
 		else:
 			#score is stored as a float to support CSR
 			#but other boards have integer scores, so we convert to that for representation
@@ -458,38 +457,6 @@ def scrape_top_submitters(days, idx, type): #type = "user" or "game"
 	#and output results
 	return [output, range_string]
 
-def time_to_seconds(time_str):
-    h, m, s = time_str.split(':')
-    return int(h) * 3600 + int(m) * 60 + int(s)
-
-def seconds_to_time(seconds):
-	#the maths here fails dismally with negative numbers
-	#since we need to support negatives (for score differentials)
-	#we just take the absolute value of the input
-	seconds = abs(seconds)
-	h = str(math.floor(seconds/3600)).zfill(2)
-	seconds = seconds % 3600
-	m = str(math.floor(seconds/60)).zfill(2)
-	seconds = int(seconds % 60)
-	s = str(seconds).zfill(2)
-	return h+":"+m+":"+s
-
-
-def get_flag_emoji(country_code):
-	#Cyberscore flag codes don't exactly match Discord emoji codes
-	#Mainly with "Unknown", and dependencies/constituent countries
-	#So we hard code handling for those
-	if country_code == "--":
-		flag_emoji = ":pirate_flag:"
-	elif country_code == "x1":
-		flag_emoji = ":england:"
-	elif country_code == "x2":
-		flag_emoji = ":scotland:"
-	elif country_code == "x3":
-		flag_emoji = ":wales:"
-	else:
-		flag_emoji = ":flag_" + country_code + ":"
-	return flag_emoji
 
 #file is an actual file hook, *not* a path
 def load_leaderboard(file):
@@ -501,7 +468,7 @@ def load_leaderboard(file):
 		pos = int(player[0])
 		name = player[1]
 		if ":" in player[2]: #special handling for speedruns since it's bugged
-			score = time_to_seconds(player[2])
+			score = cmfn.time_to_seconds(player[2])
 		else:
 			score = float(player[2]) #only a float for some boards
 		data[name] = {"pos": pos, "score": score}
