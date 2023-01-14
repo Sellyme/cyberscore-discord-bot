@@ -270,7 +270,7 @@ async def on_message(message):
 		await handle_generic_leaderboard(message, "Arcade")
 	elif message.content.startswith("!solution") or message.content.startswith("!bp"):
 		await handle_generic_leaderboard(message, "Solution")
-	elif message.content.startswith("!challenge") or message.content.startswith("!uc"):
+	elif message.content.startswith("!challenge") or message.content.startswith("!uc") or message.content.startswith("!sp"):
 		await handle_generic_leaderboard(message, "Challenge")
 	elif message.content.startswith("!collect") or message.content.startswith("!stars"):
 		await handle_generic_leaderboard(message, "Collectible")
@@ -278,7 +278,7 @@ async def on_message(message):
 		await handle_generic_leaderboard(message, "Incremental")
 	elif message.content.startswith("!level") or message.content.startswith("!cxp"):
 		await handle_generic_leaderboard(message, "Level")
-	elif message.content.startswith("!speedrun") or message.content.startswith("!time"):
+	elif message.content.startswith("!speedrun") or message.content.startswith("!time") or message.content.startswith("!sr"):
 		await handle_generic_leaderboard(message, "Speedrun")
 	elif message.content.startswith("!proof"):
 		await handle_generic_leaderboard(message, "Proof")
