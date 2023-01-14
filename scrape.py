@@ -295,18 +295,20 @@ def scrape_leaderboard(type, force, idx, sortParam = 0):
 			#this is done solely due to embed size constraints
 			score_raw = inc_scores[0].get_text().strip().replace("Versus ","V")
 			score = int(score_raw.rstrip(" VXP").replace(",",""))
-			inc_level_raw = inc_scores[1].contents[0].strip()
+			inc_level_raw = inc_scores[1].contents[1].strip()
 			#level will never reach 1,000 so no comma replacement needed
 			#we also don't do any maths with it so don't need to store as int
 			inc_level = inc_level_raw.lstrip("Level ")
 		elif type == "Level":
 			#for level we want to actually get the raw CXP and reverse-engineer the level from that
 			#this allows us to display sub-integer changes
-			cxp_raw = list(player.find_all(class_="scoreboardCSR"))[1].contents[3].get_text()
-			cxp = int(cxp_raw.strip().rstrip(" CXP").replace(",",""))
+			cxp_raw = list(player.find_all(class_="scoreboardCSR"))[1].contents[2].get_text()
+			cxp = int(cxp_raw.strip().replace(",","").replace("(","").replace(")","").rstrip(" CXP"))
 			score = math.log(max(10, cxp)/10, 2.5) + 1 #a user with 0xp starts at level 1
 			score = round(score, 2) #round it to 2dp for display purposes
-			score_raw = "Level " + "{:.2f}".format(score)
+			integer_level = math.floor(score)
+			decimal_level = round((score - integer_level) * 100)
+			score_raw = "Level " + str(integer_level) + " [" + str(decimal_level) + "%]"
 		elif type == "Rainbow":
 			score_raw = player.h2.get_text()
 			score = int(score_raw.rstrip(" RP").replace(",",""))
@@ -349,7 +351,7 @@ def scrape_leaderboard(type, force, idx, sortParam = 0):
 
 		#Starboard+Challenge+Level requires decimal formatting for output, Speedrun requires time
 		#other boards are integers
-		if type == "Starboard" or type == "Level":
+		if type == "Starboard":
 			score_str = "{:,.2f}".format(score)
 			if score_change:
 				score_change_str = " ({:+,.2f})".format(score_change)
@@ -366,6 +368,15 @@ def scrape_leaderboard(type, force, idx, sortParam = 0):
 				elif score_change < 0:
 					symbol = "-"
 				score_change_str = " ("+symbol+cmfn.seconds_to_time(score_change)+")"
+		elif type == "Level":
+			score_str = "{:,.2f}".format(score)
+			if score_change:
+				symbol = ""
+				if score_change > 0:
+					symbol = "+"
+				elif score_change < 0:
+					symbol = "-"
+				score_change_str = " ("+symbol+str(round(score_change*100))+"%)"
 		else:
 			#score is stored as a float to support CSR
 			#but other boards have integer scores, so we convert to that for representation
