@@ -1,4 +1,4 @@
-import requests, re, math
+import requests, re, math, json
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 import cmfn #common functions
@@ -469,57 +469,61 @@ def scrape_top_submitters(days, idx, type): #type = "user" or "game"
 	return [output, range_string]
 
 def scrape_profile(username):
+	URL = "https://cyberscore.me.uk/profile-api/"+username+".json"
+	page = requests.get(URL)
+	user = json.loads(page.content)
 	#hardcode values just so we can start to build an embed
+	print(URL)
 	user_data = {
-		"username": "Sellyme",
-		"user_id": 17598,
+		"username": user['username'],
+		"user_id": user['user_id'],
 		"records": {
-			"total":46551,
-			"medal":21100,
-			"speedrun":11,
-			"solution":8242,
-			"unranked":2443,
-			"collectible":2508,
-			"incremental":8762,
-			"challenge":548,
-			"arcade":7917
+			"total":user['sub_counts']['total'],
+			"medal":user['sub_counts']['ranked'],
+			"speedrun":user['sub_counts']['speedrun'],
+			"solution":user['sub_counts']['solution'],
+			"unranked":user['sub_counts']['unranked'],
+			"collectible":0, #not supported by API yet
+			"incremental":0, #not supported by API yet
+			"challenge":user['sub_counts']['challenge'],
+			"arcade":user['sub_counts']['arcade']
 		},
 		"proofs": {
-			"total":31982,
-			"medal":17336,
-			"speedrun":5,
-			"solution":5528,
-			"unranked":1484,
-			"collectible":1919,
-			"incremental":5540,
-			"challenge":33,
-			"arcade":2266
+			"total":user['proof_counts']['total'],
+			"medal":user['proof_counts']['ranked'],
+			"speedrun":user['proof_counts']['speedrun'],
+			"solution":user['proof_counts']['solution'],
+			"unranked":user['proof_counts']['unranked'],
+			"collectible":0, #not supported by API yet
+			"incremental":0, #not supported by API yet
+			"challenge":user['proof_counts']['challenge'],
+			"arcade":user['proof_counts']['arcade'],
 		},
 		"video proofs": {
-			"total":1271,
-			"medal":1190,
-			"speedrun":0,
-			"solution":73,
-			"unranked":1,
-			"collectible":0,
-			"incremental":1,
-			"challenge":3,
-			"arcade":4
+			"total":user['video_proof_counts']['total'],
+			"medal":user['video_proof_counts']['ranked'],
+			"speedrun":user['video_proof_counts']['speedrun'],
+			"solution":user['video_proof_counts']['solution'],
+			"unranked":user['video_proof_counts']['unranked'],
+			"collectible":0, #not supported by API yet
+			"incremental":0, #not supported by API yet
+			"challenge":user['video_proof_counts']['challenge'],
+			"arcade":user['video_proof_counts']['arcade'],
 		},
 		"positions": {
-			"starboard":2,
-			"medal":4,
-			"trophy":19,
-			"rainbow":1,
-			"arcade":2,
-			"speedrun":194,
-			"solution":1,
-			"challenge":4,
-			"collectible":1,
-			"incremental":1,
-			"submissions":1,
-			"proof":1,
-			"video":1
+			"starboard":user['positions']['scoreboard_pos'],
+			"medal":user['positions']['medal_pos'],
+			"trophy":user['positions']['trophy_pos'],
+			"rainbow":0,#not supported by API yet
+			"arcade":user['positions']['arcade_pos'],
+			"speedrun":user['positions']['speedrun_pos'],
+			"solution":user['positions']['solution_pos'],
+			"challenge":user['positions']['challenge_pos'],
+			"collectible":user['positions']['collectible_pos'],
+			"incremental":user['positions']['incremental_pos'],
+			"submissions":user['positions']['total_submissions_pos'],
+			"proof":user['positions']['proof_pos'],
+			"video":user['positions']['video_proof_pos'],
 		}
 	}
 

@@ -210,11 +210,20 @@ async def top_submitters(days = 1, idx = 0, channel_id = config.leaderboard_chan
 
 async def profile_stats(message):
 	channel = client.get_channel(message.channel.id)
-	#todo - actually parse username from message
-	
+
+	args = get_args(message)
+
+	if len(args) <= 1:
+		await report_error(message.channel.id, "Can not load profile without a username or user ID. Try e.g., `!profile Sellyme`")
+		return
+	else:
+		#"username" is a misnomer - it has to be a user ID for now
+		#but names will be accepted once the updated API is live, and this feature won't be public before then
+		username = args[1]
+
 	sub_milestones = [25,50,100,250,500,1000,2500,5000,10000,25000,50000,100000]
 	leadership_awards = [100,10,3,2,1]
-	user_data = scrape.scrape_profile("Sellyme")
+	user_data = scrape.scrape_profile(username)
 
 	embed = discord.Embed()
 
@@ -225,9 +234,12 @@ async def profile_stats(message):
 			continue
 		elif key == "positions":
 			for board in user_data[key]:
+				if board == "Rainbow":
+					continue #rainbow board position not exposed in API yet
 				position = user_data[key][board]
 				field_text += "**"+board.capitalize() + "**: " + infeng.ordinal(position) + "\n"
 		else:
+			continue #this data is VERY unreliable right now, remove this line when API is more robust
 			for board in user_data[key]:
 				score = user_data[key][board]
 				field_text += "**"+board.capitalize() + "**: " + str(score)
@@ -243,7 +255,7 @@ async def profile_stats(message):
 		embed.add_field(name=field_name, value=field_text, inline=True)
 
 	user_avatar = "https://cyberscore.me.uk/userpics/" + str(user_data["user_id"]) + ".jpg"
-	embed.set_author(name="Sellyme", icon_url=user_avatar)
+	embed.set_author(name=user_data['username'], icon_url=user_avatar)
 
 	embed.timestamp = datetime.utcnow()
 	await channel.send(embed=embed)
