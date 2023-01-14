@@ -305,6 +305,9 @@ async def handle_generic_leaderboard(message, type):
 		if idxParam.isnumeric():
 			#isnumeric excludes negatives or decimals, which is good for this use case
 			idx = int(idxParam) - 1
+			if idx > 90:
+				await report_error(message.channel.id, "Only the top 100 for each leaderboard are tracked.")
+				#non-fatal error, just print the bottom ten
 		
 		#handle medal sort order params
 		if type == "Medal":
