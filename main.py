@@ -226,6 +226,11 @@ async def profile_stats(message):
 	leadership_awards = [100,10,3,2,1]
 	user_data = scrape.scrape_profile(username)
 
+	#fail if user wasn't found
+	if user_data == None:
+		await report_error(message.channel.id, "Can not find profile with username/user_id `"+username+"`")
+		return
+
 	embed = discord.Embed()
 
 	for key in user_data:

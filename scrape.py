@@ -472,8 +472,10 @@ def scrape_profile(username):
 	URL = "https://cyberscore.me.uk/profile-api/"+username+".json"
 	page = requests.get(URL)
 	user = json.loads(page.content)
-	#hardcode values just so we can start to build an embed
-	print(URL)
+	
+	#check that this is a valid username
+	if user['user_id'] == None:
+		return None
 	
 	#API has a pending merge request to change scoreboard_pos to rainbow_pos
 	#so we check if scoreboard_pos exists, and if not, use rainbow_pos
