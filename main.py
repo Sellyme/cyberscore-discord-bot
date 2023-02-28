@@ -235,10 +235,13 @@ async def profile_stats(message):
 			continue
 		elif key == "positions":
 			for board in user_data[key]:
-				if board == "Rainbow":
-					continue #rainbow board position not exposed in API yet
 				position = user_data[key][board]
-				field_text += "**"+board.capitalize() + "**: " + infeng.ordinal(position) + "\n"
+				if board == "average":
+					field_text += "**"+board.capitalize() + "**: #" + position + "\n"
+				elif position:
+					field_text += "**"+board.capitalize() + "**: " + infeng.ordinal(position) + "\n"
+				else:
+					field_text += "**"+board.capitalize() + "**: N/A\n"
 		else:
 			continue #this data is VERY unreliable right now, remove this line when API is more robust
 			for board in user_data[key]:

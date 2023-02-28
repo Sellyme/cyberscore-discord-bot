@@ -474,6 +474,14 @@ def scrape_profile(username):
 	user = json.loads(page.content)
 	#hardcode values just so we can start to build an embed
 	print(URL)
+	
+	#API has a pending merge request to change scoreboard_pos to rainbow_pos
+	#so we check if scoreboard_pos exists, and if not, use rainbow_pos
+	if "scoreboard_pos" in user['positions']:
+		rainbow_pos = user['positions']['scoreboard_pos']
+	else:
+		rainbow_pos = user['positions']['rainbow_pos']
+	
 	user_data = {
 		"username": user['username'],
 		"user_id": user['user_id'],
@@ -511,10 +519,10 @@ def scrape_profile(username):
 			"arcade":user['video_proof_counts']['arcade'],
 		},
 		"positions": {
-			"starboard":user['positions']['scoreboard_pos'],
+			"starboard":user['positions']['starboard_pos'],
 			"medal":user['positions']['medal_pos'],
 			"trophy":user['positions']['trophy_pos'],
-			"rainbow":0,#not supported by API yet
+			"rainbow":rainbow_pos,
 			"arcade":user['positions']['arcade_pos'],
 			"speedrun":user['positions']['speedrun_pos'],
 			"solution":user['positions']['solution_pos'],
@@ -524,6 +532,7 @@ def scrape_profile(username):
 			"submissions":user['positions']['total_submissions_pos'],
 			"proof":user['positions']['proof_pos'],
 			"video":user['positions']['video_proof_pos'],
+			"average":str(round(user['avg_rainbow_rank'],2)),
 		}
 	}
 
