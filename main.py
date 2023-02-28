@@ -324,14 +324,15 @@ async def handle_generic_leaderboard(message, type):
 	args = get_args(message)
 
 	if len(args) > 1:
-		#if there was a parameter added and we can parse that
-		idxParam = args[1]
-		if idxParam.isnumeric():
-			#isnumeric excludes negatives or decimals, which is good for this use case
-			idx = int(idxParam) - 1
-			if idx > 90:
-				await report_error(message.channel.id, "Only the top 100 for each leaderboard are tracked.")
-				#non-fatal error, just print the bottom ten
+		#if there was a parameter added, search through to see if there's a numeric parameter to indicate index
+		for param in args:
+			if param.isnumeric():
+				#isnumeric excludes negatives or decimals, which is good for this use case
+				idx = int(param) - 1
+				if idx > 90:
+					await report_error(message.channel.id, "Only the top 100 for each leaderboard are tracked.")
+					#non-fatal error, just print the bottom ten
+				break
 		
 		#handle medal sort order params
 		if type == "Medal":
