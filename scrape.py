@@ -371,12 +371,7 @@ def scrape_leaderboard(type, force, idx, sortParam = 0):
 		elif type == "Level":
 			score_str = "{:,.2f}".format(score)
 			if score_change:
-				symbol = ""
-				if score_change > 0:
-					symbol = "+"
-				elif score_change < 0:
-					symbol = "-"
-				score_change_str = " ("+symbol+str(round(score_change*100))+"%)"
+				score_change_str = " ({:+,.0%})".format(score_change)
 		else:
 			#score is stored as a float to support CSR
 			#but other boards have integer scores, so we convert to that for representation
