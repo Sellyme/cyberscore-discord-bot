@@ -291,9 +291,9 @@ async def on_message(message):
 		await handle_generic_leaderboard(message, "Arcade")
 	elif message.content.startswith("!solution") or message.content.startswith("!bp"):
 		await handle_generic_leaderboard(message, "Solution")
-	elif message.content.startswith("!challenge") or message.content.startswith("!uc") or message.content.startswith("!sp"):
+	elif message.content.startswith("!challenge") or message.content.startswith("!uc") or message.content.startswith("!sp ") or message.content == "!sp":
 		await handle_generic_leaderboard(message, "Challenge")
-	elif message.content.startswith("!collect") or message.content.startswith("!stars"):
+	elif message.content.startswith("!collect") or message.content.startswith("!stars") or message.content.startswith("!cyberstar"):
 		await handle_generic_leaderboard(message, "Collectible")
 	elif message.content.startswith("!incremental") or message.content.startswith("!xp") or message.content.startswith("!vxp"):
 		await handle_generic_leaderboard(message, "Incremental")
