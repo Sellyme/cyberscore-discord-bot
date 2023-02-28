@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import asyncio #allow multiple threads
 import inflect #used for converting integers to ordinal positions
 
-import scrape, config #custom imports
+import scrape, config, pokemon #custom imports
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -25,6 +25,7 @@ async def on_ready():
 		loop = asyncio.get_event_loop()
 		loop.create_task(scrape_latest())
 		loop.create_task(scrape_leaderboards())
+		pokemon.get_game_master()
 		firstLoad = False
 
 async def scrape_latest():
@@ -304,6 +305,14 @@ async def on_message(message):
 		await debug(message)
 	elif message.content.startswith("!profile"):
 		await profile_stats(message)
+	elif message.content.startswith("!forms"):
+		await get_pokemon_forms(message)
+	elif message.content.startswith("!dex "):
+		await get_pokemon_dex(message)
+	elif message.content.startswith("!height "):
+		await compare_height(message)
+	elif message.content.startswith("!weight "):
+		await compare_weight(message)
 
 async def handle_generic_leaderboard(message, type):
 	print("Handling message: '" + message.content + "'")
@@ -381,6 +390,131 @@ async def handle_submitters(message, type): #type is either "user" or "game"
 
 	print("Scraping top submitters for " + str(days) + " days with idx " + str(idx))
 	await top_submitters(days, idx, message.channel.id, type)
+
+async def get_pokemon_forms(message):
+	mon = message.content.removeprefix("!forms").strip()
+	if not mon:
+		report_error(message.channel.id, "Must supply a dex number or Pokemon name to search for")
+		return
+
+	if mon.isnumeric():
+		#IDs need leading zeroes padded to 4 digits, e.g., "0001" in #0001 - Bulbasaur 
+		key = ("000"+mon)[-4:]
+		forms = pokemon.get_forms(key, "number")
+		reply = "Pokedex forms found for #" + key + ":\n"
+	else:
+		key = pokemon.format_name(mon)
+		forms = pokemon.get_forms(key, "name")
+		reply = "Pokedex forms found for " + key + ":\n"
+
+	if not forms:
+		await report_error(message.channel.id, "Pokemon '" + key + "' could not be found")
+		return
+
+	for form in forms:
+		reply += form.removesuffix("_NORMAL")+"\n"
+	await message.channel.send(reply)
+
+async def get_pokemon_dex(message):
+	params = message.content.removeprefix("!dex").strip()
+	if not params or " " not in params:
+		report_error(message.channel.id, "You must supply both a dex item to look up, and a Pokémon form name to search for. Use `!forms {dex_number}` to see valid form names for a certain species.")
+		return
+	
+	if params.startswith("type"):
+		mon = pokemon.format_name(params.removeprefix("type").strip())
+		output = pokemon.get_type(mon)
+	elif params.startswith("bcr"):
+		mon = pokemon.format_name(params.removeprefix("bcr").strip())
+		output = pokemon.get_bcr(mon)
+	elif params.startswith("stats"):
+		mon = pokemon.format_name(params.removeprefix("stats").strip())
+		output = pokemon.get_stats(mon)
+	elif params.startswith("moves"):
+		mon = pokemon.format_name(params.removeprefix("moves").strip())
+		output = pokemon.get_moves(mon)
+	elif params.startswith("weight"):
+		mon = pokemon.format_name(params.removeprefix("weight").strip())
+		weight = pokemon.get_dex_weight(mon)
+		output = str(weight)+" kg" if weight else weight
+	elif params.startswith("height"):
+		mon = pokemon.format_name(params.removeprefix("height").strip())
+		height = pokemon.get_dex_height(mon)
+		output = str(height)+" m" if height else height
+	else:
+		await report_error(message.channel.id, "Cannot understand parameters given. Please enter first the dex field you are requesting and then the Pokemon name, e.g., `!dex type Pidgey`")
+
+	if output:
+		await message.channel.send(output)
+	else:
+		await report_error(message.channel.id, "Pokemon '" + mon + "' could not be found")
+
+async def compare_height(message):
+	params = message.content.removeprefix("!height").strip()
+	param_regex = r'(.*) (\d+(.\d+)?) ?m?'
+	m = re.fullmatch(param_regex, params)
+	if not m:
+		await report_error(message.channel.id, "Could not find a Pokemon name and height in your message. Please include both in that order, e.g., `!height Blastoise 1.74`")
+		return
+	
+	mon = pokemon.format_name(m.group(1))
+	result = pokemon.get_height_chance(mon, float(m.group(2)))
+	if not result:
+		await report_error(message.channel.id, "Pokemon "+m.group(1)+" could not be matched to any game master entry. Try searching for form names by dex number to see what valid names there are, e.g., `!forms 20` for Raticate")
+	
+	size_str = "larger" if result[0] > 0 else "smaller"
+	output = "Chance of a " + m.group(1).title() + " " + size_str + " than " + m.group(2) + " m:\n"
+	win_chances = result[1]
+	
+	if len(win_chances) == 1 or round(win_chances[0],5) == round(win_chances[1],5) == round(win_chances[2],5):
+		if win_chances[0] > 0:
+			output += f"{win_chances[0]:.3%}"
+		else:
+			output = "A " + m.group(1).title() + " " + size_str + " than " + m.group(2) +" m is not possible."
+	else:
+		output += "Class 1: "
+		output += f"{win_chances[0]:.3%}" if win_chances[0] > 0 else "Not Possible"
+		output += "\nClass 2: "
+		output += f"{win_chances[1]:.3%}" if win_chances[1] > 0 else "Not Possible"
+		output += "\nClass 3: "
+		output += f"{win_chances[2]:.3%}" if win_chances[2] > 0 else "Not Possible"
+	
+	await message.channel.send(output)
+
+async def compare_weight(message):
+	params = message.content.removeprefix("!weight").strip()
+	param_regex = r'(.*) (\d+(.\d+)?) ?k?g?'
+	m = re.fullmatch(param_regex, params)
+	if not m:
+		await report_error(message.channel.id, "Could not find a Pokemon name and height in your message. Please include both in that order, e.g., `!weight Butterfree 51.97`")
+		return
+	
+	mon = pokemon.format_name(m.group(1))
+	result = pokemon.get_weight_chance(mon, float(m.group(2)))
+	if not result:
+		await report_error(message.channel.id, "Pokemon "+m.group(1)+" could not be matched to any game master entry. Try searching for form names by dex number to see what valid names there are, e.g., `!forms 20` for Raticate")
+
+	size_str = "heavier" if result[0] > 0 else "lighter"
+	output = "Chance of a " + m.group(1).title() + " " + size_str + " than " + m.group(2) + " kg:\n"
+	win_chances = result[1]
+	print("win_chances", win_chances)
+
+	#print(win_chances)
+	if round(win_chances[0],5) == round(win_chances[1],5) == round(win_chances[2],5):
+		if win_chances[0] > 0:
+			output += f"{win_chances[0]:.3%}"
+		else:
+			output = "A " + m.group(1).title() + " " + size_str + " than " + m.group(2) +" kg is not possible."
+	else:
+		output += "Class 1: "
+		output += f"{win_chances[0]:.3%}" if win_chances[0] > 0 else "Not Possible"
+		output += "\nClass 2: "
+		output += f"{win_chances[1]:.3%}" if win_chances[1] > 0 else "Not Possible"
+		output += "\nClass 3: "
+		output += f"{win_chances[2]:.3%}" if win_chances[2] > 0 else "Not Possible"
+	
+	await message.channel.send(output)
+	
 
 def get_args(message):
 	args = message.content.split(" ")
