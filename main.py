@@ -523,11 +523,10 @@ def get_args(message):
 	return args
 
 async def debug(message):
-	channel = client.get_channel(message.channel.id)
 	if len(message.content) > 7:
-		debugParam = message.content.lstrip("!debug ")
+		debugParam = message.content.removeprefix("!debug ")
 		if debugParam.startswith("forcedaily "):
-			forceParam = debugParam.lstrip("forcedaily ")
+			forceParam = debugParam.removeprefix("forcedaily ")
 			await scrape_leaderboard(forceParam)
 
 

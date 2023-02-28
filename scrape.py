@@ -267,7 +267,7 @@ def scrape_leaderboard(type, force, idx, sortParam = 0):
 		#note that "scoreboardCSR" is actually the correct classname for arcade/solution
 		if type == "Starboard":
 			score_raw = player.find(class_="scoreboardCSR").get_text().strip()
-			score = float(score_raw.rstrip(" CSR").replace(",",""))
+			score = float(score_raw.removesuffix(" CSR").replace(",",""))
 		elif type == "Medal":
 			medals = player.find_all(class_="medals")
 			score_raw = medals[sortParam].get_text().strip()
@@ -278,32 +278,32 @@ def scrape_leaderboard(type, force, idx, sortParam = 0):
 			score = int(score_raw.replace(",",""))
 		elif type == "Arcade":
 			score_raw = player.find(class_="scoreboardCSR").get_text().strip()
-			score = int(score_raw.rstrip(" Tokens").replace(",",""))
+			score = int(score_raw.removesuffix(" Tokens").replace(",",""))
 		elif type == "Solution":
 			score_raw = player.find(class_="scoreboardCSR").get_text().strip()
-			score = int(score_raw.rstrip(" Brain Power").replace(",",""))
+			score = int(score_raw.removesuffix(" Brain Power").replace(",",""))
 		elif type == "Challenge":
 			score_raw = player.find(class_="scoreboardCSR").get_text().strip()
-			score = float(score_raw.rstrip(" Style Points").replace(",",""))
+			score = float(score_raw.removesuffix(" Style Points").replace(",",""))
 		elif type == "Collectible":
 			score_raw = player.find(class_="scoreboardCSR").get_text().strip()
-			score = int(score_raw.rstrip(" Cyberstars").replace(",",""))
+			score = int(score_raw.removesuffix(" Cyberstars").replace(",",""))
 		elif type == "Incremental":
 			#incremental is a bit odd as there's two important metrics
 			inc_scores = list(player.find_all(class_="scoreboardCSR"))
 			#for the incremental score we display "VXP" instead of "Versus XP"
 			#this is done solely due to embed size constraints
 			score_raw = inc_scores[0].get_text().strip().replace("Versus ","V")
-			score = int(score_raw.rstrip(" VXP").replace(",",""))
+			score = int(score_raw.removesuffix(" VXP").replace(",",""))
 			inc_level_raw = inc_scores[1].contents[1].strip()
 			#level will never reach 1,000 so no comma replacement needed
 			#we also don't do any maths with it so don't need to store as int
-			inc_level = inc_level_raw.lstrip("Level ")
+			inc_level = inc_level_raw.removeprefix("Level ")
 		elif type == "Level":
 			#for level we want to actually get the raw CXP and reverse-engineer the level from that
 			#this allows us to display sub-integer changes
 			cxp_raw = list(player.find_all(class_="scoreboardCSR"))[1].contents[2].get_text()
-			cxp = int(cxp_raw.strip().replace(",","").replace("(","").replace(")","").rstrip(" CXP"))
+			cxp = int(cxp_raw.strip().replace(",","").replace("(","").replace(")","").removesuffix(" CXP"))
 			score = math.log(max(10, cxp)/10, 2.5) + 1 #a user with 0xp starts at level 1
 			score = round(score, 2) #round it to 2dp for display purposes
 			integer_level = math.floor(score)
@@ -311,7 +311,7 @@ def scrape_leaderboard(type, force, idx, sortParam = 0):
 			score_raw = "Level " + str(integer_level) + " [" + str(decimal_level) + "%]"
 		elif type == "Rainbow":
 			score_raw = player.h2.get_text()
-			score = int(score_raw.rstrip(" RP").replace(",",""))
+			score = int(score_raw.removesuffix(" RP").replace(",",""))
 		elif type == "Submissions" or type == "Proof" or type == "Video":
 			score_raw = player.b.get_text()
 			score = int(score_raw.replace(",",""))
