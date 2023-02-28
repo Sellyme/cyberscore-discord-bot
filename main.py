@@ -4,6 +4,7 @@ from dotenv import load_dotenv #discord auth
 from datetime import datetime, timedelta
 import asyncio #allow multiple threads
 import inflect #used for converting integers to ordinal positions
+import re
 
 import scrape, config, pokemon #custom imports
 
