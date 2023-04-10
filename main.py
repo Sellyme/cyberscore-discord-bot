@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import asyncio #allow multiple threads
 import inflect #used for converting integers to ordinal positions
 import re
+import traceback
 
 import scrape, config, pokemon #custom imports
 
@@ -71,7 +72,7 @@ async def scrape_latest():
 				embed = discord.Embed(description=msg)
 				await cs_pokemon_channel.send(embed=embed)
 		except Exception as e:
-			print(e)
+			traceback.print_exc()
 			print("Exception occurred in latest subs scrape")
 		finally:
 			await asyncio.sleep(config.submissions_frequency)
