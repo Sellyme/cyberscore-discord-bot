@@ -399,11 +399,7 @@ def analyse_score(score):
 		perc = str(round(chance_to_set * 100,3))
 		frac = str(round(1/chance_to_set))
 		output += "This score was a " +perc+"% chance of occurring (1 in "+frac+")"
-
-	#Heights floor if within 1cm of a class boundary. This can cause minimum heights to be lower than
-	#would be expected with rounding of the actual precise values.
-	#So if we're checking Lowest Height, add a disclaimer
-	if score['polarity'] == 0 and score['type'] == 1:
-		output += "\n*Note: calculations for XXS heights are currently slightly broken.*"
+	else:
+		output += "This score appears to be impossible. If it's definitely correct, yell at <@101709643822157824> to fix his code."
 
 	return output
