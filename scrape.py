@@ -140,21 +140,7 @@ def scrape_latest():
 		if game_link == "/game/2785":
 			ps_results.append(output)
 		elif game_link == "/game/2006": #if it's for PoGo, check for and announce rare scores
-			score_raw = score_value.replace(",","").split(" ")[0]
-			score_data = {
-				'type': None,
-				'polarity': None,
-				'user_link': user,
-				'flag_emoji': flag_emoji,
-				'game': game,
-				'group': group_name,
-				'chart': chart_name,
-				'chart_link': chart,
-				'score': float(score_raw),
-				'score_link': score,
-				'medal': medal,
-			}
-
+			skip = False
 			#set one flag indicating weight/height, and another indicating high/low
 			if "Lightest" in group_name:
 				score_data['type'] = 0
@@ -168,14 +154,32 @@ def scrape_latest():
 			elif "Tallest" in group_name:
 				score_data['type'] = 1
 				score_data['polarity'] = 1
+			else:
+				#for all other groups no analysis is desired
+				#may be worth adding 100% L50 checks though? that could be fun
+				skip = True
 
-			#for all other groups no analysis is desired
-			#may be worth adding 100% L50 checks though? that could be fun
-			if score_data['type'] is not None:
-				size_result = pokemon.analyse_score(score_data)
-				print("size result", size_result)
-				if size_result:
-					size_results.append(size_result)
+			if not skip:
+				score_raw = score_value.replace(",","").split(" ")[0]
+				score_data = {
+					'type': type,
+					'polarity': polarity,
+					'user_link': user,
+					'flag_emoji': flag_emoji,
+					'game': game,
+					'group': group_name,
+					'chart': chart_name,
+					'chart_link': chart,
+					'score': float(score_raw),
+					'score_link': score,
+					'medal': medal,
+				}
+
+				if score_data['type'] is not None:
+					size_result = pokemon.analyse_score(score_data)
+					print("size result", size_result)
+					if size_result:
+						size_results.append(size_result)
 
 		#we need to check the comment for any instance of certain words
 		#to avoid having to account for punctuation, strip everything that isn't a-z or whitespace
