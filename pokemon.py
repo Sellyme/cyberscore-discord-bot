@@ -364,13 +364,16 @@ def analyse_score(score):
 		return None
 
 	#if we get here an output is desired
-	#first, generate the numbers indicating rarity
-	perc = str(round(chance_to_set * 1000,3))
-	frac = str(round(1/chance_to_set))
+
 	#then start building the string
 	output += score['flag_emoji'] + " " + score['user_link'] + " just scored " + score['score_link'] + "\n"
 	output += score['game'] + " → " + score['chart_link'] + "\n"
-	output += "This score was a " +perc+"% chance of occurring (1 in "+frac+")"
+	#first, generate the numbers indicating rarity
+	#we check that this is >0 first to avoid reporting incorrect data for XXS heights (see below)
+	if chance_to_set > 0:
+		perc = str(round(chance_to_set * 100,3))
+		frac = str(round(1/chance_to_set))
+		output += "This score was a " +perc+"% chance of occurring (1 in "+frac+")"
 
 	#Heights floor if within 1cm of a class boundary. This can cause minimum heights to be lower than
 	#would be expected with rounding of the actual precise values.
