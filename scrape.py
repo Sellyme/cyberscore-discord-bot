@@ -143,17 +143,17 @@ def scrape_latest():
 			skip = False
 			#set one flag indicating weight/height, and another indicating high/low
 			if "Lightest" in group_name:
-				score_data['type'] = 0
-				score_data['polarity'] = 0
+				type = 0
+				polarity = 0
 			elif "Heaviest" in group_name:
-				score_data['type'] = 0
-				score_data['polarity'] = 1
+				type = 0
+				polarity = 1
 			elif "Shortest" in group_name:
-				score_data['type'] = 1
-				score_data['polarity'] = 0
+				type = 1
+				polarity = 0
 			elif "Tallest" in group_name:
-				score_data['type'] = 1
-				score_data['polarity'] = 1
+				type = 1
+				polarity = 1
 			else:
 				#for all other groups no analysis is desired
 				#may be worth adding 100% L50 checks though? that could be fun
