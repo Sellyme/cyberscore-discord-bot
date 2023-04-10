@@ -303,7 +303,7 @@ def scrape_leaderboard(type, force, idx, sortParam = 0):
 			#for level we want to actually get the raw CXP and reverse-engineer the level from that
 			#this allows us to display sub-integer changes
 			cxp_raw = list(player.find_all(class_="scoreboardCSR"))[1].contents[2].get_text()
-			cxp = int(cxp_raw.strip().replace(",","").replace("(","").replace(")","").removesuffix(" CXP"))
+			cxp = float(cxp_raw.strip().replace(",","").replace("(","").replace(")","").removesuffix(" CXP"))
 			score = math.log(max(10, cxp)/10, 2.5) + 1 #a user with 0xp starts at level 1
 			score = round(score, 2) #round it to 2dp for display purposes
 			integer_level = math.floor(score)
