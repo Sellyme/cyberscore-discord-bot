@@ -172,7 +172,32 @@ def get_height_chance(mon, height):
 
 	if height_variate < 1.00:
 		category = -1
-		winning_score = height - 0.005
+		
+		#check what the winning score will be - if close to boundaries this can behave oddly
+		#todo - this solution is naive and doesn't handle non-contiguous "win" ranges that can occur
+		#at the upper border for XS (0.75x). Fortunately, for the use case of this bot, the 0.75x range
+		#isn't as relevant, we're more interested in the XXS range.
+		#Note that despite 4 statements here, there's only two different behaviours on our end.
+		#This is just to more explicitly state each case, even though the end result is the same
+		#and hopefully aid with debugging.
+		if int(dex_height*100) % 2 == 0 and height*100 == round(dex_height*100/2):
+			#this height is the minimum possible XS, and any XXS will beat it due to rounding
+			#so winning_score is anything even 0.00001 better than set score
+			winning_score = height
+		elif int(dex_height*100) % 2 == 1 and height*100 == math.ceil(dex_height*100/2):
+			#this is a Pokemon where the XS boundary is e.g., 0.495m
+			#the score to beat is [0.495,0.50) (aka, XS), and any XXS will beat it
+			#so winning score is anything <0.005 lower
+			winning_score = height - 0.005
+		elif int(dex_height*100) % 2 == 1 and height*100 == math.floor(dex_height*100/2):
+			#same species case as previous, but the score to beat is [0.490,0.495), and displays as 0.49.
+			#any score lower than 0.49 will be within 0.01 of the height boundary, and therefore floors
+			#meaning any score below the displayed score (the height var) will beat it
+			winning_score = height
+		else:
+			#default handling if no weird class boundary behaviour exists
+			winning_score = height - 0.005
+
 		winning_variate = winning_score / dex_height
 		
 		print("Winning variate to beat",winning_score,"is",winning_variate)
