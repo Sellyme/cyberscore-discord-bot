@@ -1,6 +1,7 @@
 import requests, re, math, json
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
+import pokemon
 import cmfn #common functions
 
 CS_PREFIX = "https://cyberscore.me.uk"
@@ -10,6 +11,7 @@ def scrape_latest():
 	cs_results = [] #messages to output to Cyberscore Discord
 	ps_results = [] #messages to output to New Pokemon Snap Discord
 	warn_results = [] #messages to output to a staff channel on certain keywords
+	size_results = [] #messages to output to CS #pokemon on particularly good scores
 	#any of these keywords occurring in a comment should have the record checked for validity
 	warn_keywords = ["emu", "emulator", "emulation", "emulated", "rom", "vba", "dolphin", "desmume", "retroarch", "p64", "swanstation", "mesen", "snes9x", "zsnes", "mgba", "libretro", "retropie", "melonds", "mame", "z64", "iso", "stella", "ppsspp", "epsxe", "gliden", "jabo"]
 
@@ -137,7 +139,44 @@ def scrape_latest():
 		#if this is for New Pokemon Snap, output to that as well
 		if game_link == "/game/2785":
 			ps_results.append(output)
-		
+		elif game_link == "/game/2006": #if it's for PoGo, check for and announce rare scores
+			score_raw = score_value.replace(",","").split(" ")[0]
+			score_data = {
+				'type': None,
+				'polarity': None,
+				'user_link': user,
+				'flag_emoji': flag_emoji,
+				'game': game,
+				'group': group_name,
+				'chart': chart_name,
+				'chart_link': chart,
+				'score': float(score_raw),
+				'score_link': score,
+				'medal': medal,
+			}
+
+			#set one flag indicating weight/height, and another indicating high/low
+			if "Lightest" in group_name:
+				score_data['type'] = 0
+				score_data['polarity'] = 0
+			elif "Heaviest" in group_name:
+				score_data['type'] = 0
+				score_data['polarity'] = 1
+			elif "Shortest" in group_name:
+				score_data['type'] = 1
+				score_data['polarity'] = 0
+			elif "Tallest" in group_name:
+				score_data['type'] = 1
+				score_data['polarity'] = 1
+
+			#for all other groups no analysis is desired
+			#may be worth adding 100% L50 checks though? that could be fun
+			if score_data['type'] is not None:
+				size_result = pokemon.analyse_score(score_data)
+				print("size result", size_result)
+				if size_result:
+					size_results.append(size_result)
+
 		#we need to check the comment for any instance of certain words
 		#to avoid having to account for punctuation, strip everything that isn't a-z or whitespace
 		comment_stripped = re.sub(r'[^a-z ]+', '', comment.lower())
@@ -158,7 +197,7 @@ def scrape_latest():
 		print(now.strftime("%H:%M:%S"), "no updates")
 	f.close()
 	
-	return [cs_results, ps_results, warn_results]
+	return [cs_results, ps_results, warn_results, size_results]
 
 #force indicates whether it was a forced update by a user, or a daily check
 #idx indicates the rank at which we're going to start printing to Discord

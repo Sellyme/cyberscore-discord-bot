@@ -278,6 +278,28 @@ def format_name(name):
 	return name
 
 def get_template(mon): #mon is always a name of format DARUMAKA_GALAR
+	#handle any conversions directly from CS chart names
+	if "(" in mon:
+		#pull out the mon name, and put the form info in a second entry
+		mon_chunks = mon.split("_(")
+		#and then check all the form types and reconstruct string
+		if mon_chunks[1] == "ALOLAN_FORM)":
+			mon = mon_chunks[0] + "_ALOLA"
+		elif mon_chunks[1] == "GALARIAN_FORM)":
+			mon = mon_chunks[0] + "_GALARIAN"
+		elif mon_chunks[1] == "HISUIAN_FORM)":
+			mon = mon_chunks[0] + "_HISUIAN"
+		elif mon_chunks[0] == "FRILLISH" or mon_chunks[0] == "PYROAR" or mon_chunks[0] == "Meowstic":
+		#Pokemon where user display is Male/Female, but game master is Normal/Female (lmao wtf)
+			mon = mon_chunks[0]+"_"+mon_chunks[1].replace(")","").replace("MALE","NORMAL")
+		else:
+		#Pokemon with "Pokemon (FormType Suffix)" style names, where we discard the suffix
+		#this should be all extras and we can just use an else
+		#Pokemon this affects: Castform, Deoxys, Cherrim, Shellow, Gastrodon, Therian/Incarnate Genies, Genesect, Flabebe line, Furfrou, Pumpkaboo
+			mon = mon_chunks[0]+"_"+mon_chunks[1].replace(")","").replace("_FORME","").replace("_CLOAK","").replace("_FORM","").replace("_DRIVE","").replace("_FLOWER","").replace("_TRIM","").replace("_SIZE","").replace("_STYLE","").replace("POM_POM","POMPOM")
+			#note the "POMPOM" special case for Oricorio, this is the only Pokemon
+			#where the game master strips "-" instead of replacing with "_"
+
 	print("Searching template for", mon)
 	if mon == "NIDORANF" or mon == "NIDORAN_F":
 		return pokemon_templates["NIDORAN_F"]
@@ -294,4 +316,66 @@ def get_template(mon): #mon is always a name of format DARUMAKA_GALAR
 		return pokemon_templates["SPINDA_00"]
 	else:
 		print("Couldn't find template")
-		return False	
+		return False
+
+def analyse_score(score):
+	#get Pokemon from the chart name
+	#todo - need to handle form names specially here
+	mon = format_name(score['chart'][8:])
+	print("Analysing mon: ",mon)
+
+	size_set = score['score']
+	#we need to offset the scores by the rounding margin used to calculate win chances
+	#in order to get the chances of *setting* that score, rather than the chances of *beating* it
+	#score['polarity'] is 0 for low, 1 for high
+	if score['polarity'] == 0:
+		size_beaten = score['score'] + 0.01
+	elif score['polarity'] == 1:
+		size_beaten = score['score'] - 0.01
+
+	#score['type'] is 0 for weight, 1 for height
+	#note that get_*eight_chance returns a list of two variables
+	#idx 0 is -1 if lower is better, +1 if higher is better. We can ignore that.
+	#idx 1 is the list of win chances depending on species class. This is what we want
+	if score['type'] == 0:
+		chance_to_set = get_weight_chance(mon, size_beaten)[1]
+		chance_to_beat = get_weight_chance(mon, size_set)[1]
+	elif score['type'] == 1:
+		chance_to_set = get_height_chance(mon, size_beaten)[1]
+		chance_to_beat = get_height_chance(mon, size_set)[1]
+
+	print(chance_to_set)
+	#normalise the chances into a single value
+	#for now we just take the maximum value, so we never have any false positives
+	#in the future we should try to build a DB of what XXL class each species is in and pull the correct one
+	if len(chance_to_set) > 1:
+		chance_to_set = [max(chance_to_set)]
+	if len(chance_to_beat) > 1:
+		chance_to_beat = [max(chance_to_beat)]
+	chance_to_set = chance_to_set[0]
+	chance_to_beat = chance_to_beat[0]
+
+	#construct string
+	if chance_to_beat == 0:
+		output = "**New perfect score!**\n" #replace with "New perfect score" or "New rare score" accordingly
+	elif chance_to_set < 0.001:
+		output = "**New rare score!**\n"
+	else:
+		return None
+
+	#if we get here an output is desired
+	#first, generate the numbers indicating rarity
+	perc = str(round(chance_to_set * 1000,3))
+	frac = str(round(1/chance_to_set))
+	#then start building the string
+	output += score['flag_emoji'] + " " + score['user_link'] + " just scored " + score['score_link'] + "\n"
+	output += score['game'] + " → " + score['chart_link'] + "\n"
+	output += "This score was a " +perc+"% chance of occurring (1 in "+frac+")"
+
+	#Heights floor if within 1cm of a class boundary. This can cause minimum heights to be lower than
+	#would be expected with rounding of the actual precise values.
+	#So if we're checking Lowest Height, add a disclaimer
+	if score['polarity'] == 0 and score['type'] == 1:
+		output += "\n*Note: calculations for XXS heights are currently slightly broken.*"
+
+	return output

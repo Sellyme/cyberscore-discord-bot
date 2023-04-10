@@ -33,6 +33,7 @@ async def scrape_latest():
 	cs_channel = client.get_channel(config.cs_submissions_channel)
 	ps_channel = client.get_channel(config.ps_submissions_channel)
 	cs_mod_channel = client.get_channel(config.cs_mod_channel)
+	cs_pokemon_channel = client.get_channel(config.cs_pokemon_channel)
 
 	while True:
 		try:
@@ -40,6 +41,7 @@ async def scrape_latest():
 			cs_results = results[0]
 			ps_results = results[1]
 			warn_results = results[2]
+			size_results = results[3]
 
 			#Messages to output to Cyberscore Discord
 			for msg in cs_results:
@@ -63,6 +65,11 @@ async def scrape_latest():
 				#create embed for Discord
 				embed = discord.Embed(description=msg)
 				await cs_mod_channel.send(embed=embed)
+
+			#Messages to output to Cyberscore #pokémon channel
+			for msg in size_results:
+				embed = discord.Embed(description=msg)
+				await cs_pokemon_channel.send(embed=embed)
 		except Exception as e:
 			print(e)
 			print("Exception occurred in latest subs scrape")
