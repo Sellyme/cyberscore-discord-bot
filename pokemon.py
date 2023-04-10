@@ -325,22 +325,22 @@ def get_template(mon): #mon is always a name of format DARUMAKA_GALAR
 			#note the "POMPOM" special case for Oricorio, this is the only Pokemon
 			#where the game master strips "-" instead of replacing with "_"
 
-	print("Searching template for", mon)
+	#print("Searching template for", mon)
 	if mon == "NIDORANF" or mon == "NIDORAN_F":
 		return pokemon_templates["NIDORAN_F"]
 	elif mon == "NIDORANM" or mon == "NIDORAN_M":
 		return pokemon_templates["NIDORAN_M"]
 
 	if mon in pokemon_templates:
-		print("Found, returning")
+		#print("Found, returning")
 		return pokemon_templates[mon]
 	elif mon+"_NORMAL" in pokemon_templates:
-		print("Found (Normal), returning")
+		#print("Found (Normal), returning")
 		return pokemon_templates[mon+"_NORMAL"]
 	elif mon == "SPINDA":
 		return pokemon_templates["SPINDA_00"]
 	else:
-		print("Couldn't find template")
+		print("Couldn't find template for",mon)
 		return False
 
 def analyse_score(score):

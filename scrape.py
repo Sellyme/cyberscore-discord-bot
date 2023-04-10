@@ -177,7 +177,7 @@ def scrape_latest():
 
 				if score_data['type'] is not None:
 					size_result = pokemon.analyse_score(score_data)
-					print("size result", size_result)
+					#print("size result", size_result)
 					if size_result:
 						size_results.append(size_result)
 
