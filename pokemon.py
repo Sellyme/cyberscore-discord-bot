@@ -182,16 +182,16 @@ def get_height_chance(mon, height):
 		#Note that despite 4 statements here, there's only two different behaviours on our end.
 		#This is just to more explicitly state each case, even though the end result is the same
 		#and hopefully aid with debugging.
-		if int(dex_height*100) % 2 == 0 and height*100 == round(dex_height*100/2):
+		if int(dex_height*100) % 2 == 0 and round(height*100) == round(dex_height*100/2):
 			#this height is the minimum possible XS, and any XXS will beat it due to rounding
 			#so winning_score is anything even 0.00001 better than set score
 			winning_score = height
-		elif int(dex_height*100) % 2 == 1 and height*100 == math.ceil(dex_height*100/2):
+		elif int(dex_height*100) % 2 == 1 and round(height*100) == math.ceil(dex_height*100/2):
 			#this is a Pokemon where the XS boundary is e.g., 0.495m
 			#the score to beat is [0.495,0.50) (aka, XS), and any XXS will beat it
 			#so winning score is anything <0.005 lower
 			winning_score = height - 0.005
-		elif int(dex_height*100) % 2 == 1 and height*100 == math.floor(dex_height*100/2):
+		elif int(dex_height*100) % 2 == 1 and round(height*100) == math.floor(dex_height*100/2):
 			#same species case as previous, but the score to beat is [0.490,0.495), and displays as 0.49.
 			#any score lower than 0.49 will be within 0.01 of the height boundary, and therefore floors
 			#meaning any score below the displayed score (the height var) will beat it
