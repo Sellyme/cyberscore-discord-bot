@@ -149,6 +149,7 @@ def get_dex_height(mon):
 #if the array contains just one value, that's the chance for any wild spawn
 #if the array contains three values, they're the chances for class one through three species respectively
 def get_height_chance(mon, height):
+	#print("Checking height chance for",mon,"with height",height)
 	#height ranges for reference:
 	#note that a Pokemon species can only be in ONE XXL group, either XXL1, XXL2, or XXL3
 	#the chance displayed for each of those groups in this list assumes that the species IS in that group
@@ -326,6 +327,7 @@ def get_template(mon): #mon is always a name of format DARUMAKA_GALAR
 			#this is the only Pokemon where the game master strips "-" instead of replacing with "_"
 
 	#print("Searching template for", mon)
+	
 	#handle Nidoran
 	if mon == "NIDORANF" or mon == "NIDORAN_F":
 		return pokemon_templates["NIDORAN_F"]
@@ -396,7 +398,8 @@ def analyse_score(score):
 	#if we get here an output is desired
 
 	#then start building the string
-	output += score['flag_emoji'] + " " + score['user_link'] + " just scored " + score['score_link'] + "\n"
+	output += score['flag_emoji'] + " " + score['user_link'] + " just scored " + score['score_link']
+	output += " (Pos: **" + score['pos'] + "**" + score['medal'] + ")\n"
 	output += score['game'] + " → " + score['chart_link'] + "\n"
 	#first, generate the numbers indicating rarity
 	#we check that this is >0 first to avoid reporting incorrect data for XXS heights (see below)

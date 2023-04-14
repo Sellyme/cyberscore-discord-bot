@@ -173,6 +173,7 @@ def scrape_latest():
 					'score': float(score_raw),
 					'score_link': score,
 					'medal': medal,
+					'pos': pos,
 				}
 
 				if score_data['type'] is not None:
