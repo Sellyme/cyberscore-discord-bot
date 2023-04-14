@@ -52,6 +52,8 @@ def get_game_master():
 		pokemon_forms_by_name["NIDORAN"] = ["NIDORAN_F", "NIDORAN_M"]
 		pokemon_forms_by_id["0029"] = ["NIDORAN_F"]
 		pokemon_forms_by_id["0032"] = ["NIDORAN_M"]
+		pokemon_forms_by_name["UNOWN"] = ["UNOWN"]
+		pokemon_forms_by_id["0201"] = ["UNOWN"]
 		
 		template_regex = r'^V(\d\d\d\d)_POKEMON_(.*)'
 
@@ -296,8 +298,8 @@ def get_weight_chance(mon, weight):
 #spaces converted to underscores, and all characters capitalised
 def format_name(name):
 	#replace all spaces with underscores: "tapu koko" → "TAPU_KOKO"; "JANGMO-O" → "JANGMOO"
-	name = name.upper().replace(" ","_").replace("-","_")
-	for char in ":é'.": #strip special chars: "FARFETCH'D" → "FARFETCHD"; "MR._MIME" → "MR_MIME"
+	name = name.upper().replace(" ","_").replace("-","_").replace("é","e").replace("É","E").replace("♀","F").replace("♂","M")
+	for char in ":'’.": #strip special chars: "FARFETCH'D" → "FARFETCHD"; "MR._MIME" → "MR_MIME"
 		if char in name:
 			name = name.replace(char, "")
 	return name
@@ -318,14 +320,13 @@ def get_template(mon): #mon is always a name of format DARUMAKA_GALAR
 		#Pokemon where user display is Male/Female, but game master is Normal/Female (lmao wtf)
 			mon = mon_chunks[0]+"_"+mon_chunks[1].replace(")","").replace("MALE","NORMAL")
 		else:
-		#Pokemon with "Pokemon (FormType Suffix)" style names, where we discard the suffix
-		#this should be all extras and we can just use an else
-		#Pokemon this affects: Castform, Deoxys, Cherrim, Shellow, Gastrodon, Therian/Incarnate Genies, Genesect, Flabebe line, Furfrou, Pumpkaboo
+		#Pokemon with "Pokemon (Form)" names. In many cases the form has a suffix, which we strip.
 			mon = mon_chunks[0]+"_"+mon_chunks[1].replace(")","").replace("_FORME","").replace("_CLOAK","").replace("_FORM","").replace("_DRIVE","").replace("_FLOWER","").replace("_TRIM","").replace("_SIZE","").replace("_STYLE","").replace("POM_POM","POMPOM")
-			#note the "POMPOM" special case for Oricorio, this is the only Pokemon
-			#where the game master strips "-" instead of replacing with "_"
+			#note the "POMPOM" special case for Oricorio
+			#this is the only Pokemon where the game master strips "-" instead of replacing with "_"
 
 	#print("Searching template for", mon)
+	#handle Nidoran
 	if mon == "NIDORANF" or mon == "NIDORAN_F":
 		return pokemon_templates["NIDORAN_F"]
 	elif mon == "NIDORANM" or mon == "NIDORAN_M":
@@ -338,7 +339,11 @@ def get_template(mon): #mon is always a name of format DARUMAKA_GALAR
 		#print("Found (Normal), returning")
 		return pokemon_templates[mon+"_NORMAL"]
 	elif mon == "SPINDA":
+	#we don't care about Spinda forms being separate, so just take any of them
 		return pokemon_templates["SPINDA_00"]
+	elif mon == "SCATTERBUG":
+	#same for Scatterbug
+		return pokemon_templates["SCATTERBUG_ARCHIPELAGO"]
 	else:
 		print("Couldn't find template for",mon)
 		return False
