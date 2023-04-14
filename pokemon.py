@@ -54,6 +54,8 @@ def get_game_master():
 		pokemon_forms_by_id["0032"] = ["NIDORAN_M"]
 		pokemon_forms_by_name["UNOWN"] = ["UNOWN"]
 		pokemon_forms_by_id["0201"] = ["UNOWN"]
+		pokemon_forms_by_name["SPINDA"] = ["SPINDA"]
+		pokemon_forms_by_id["0327"] = ["SPINDA"]
 		
 		template_regex = r'^V(\d\d\d\d)_POKEMON_(.*)'
 
@@ -342,7 +344,7 @@ def get_template(mon): #mon is always a name of format DARUMAKA_GALAR
 		return pokemon_templates[mon+"_NORMAL"]
 	elif mon == "SPINDA":
 	#we don't care about Spinda forms being separate, so just take any of them
-		return pokemon_templates["SPINDA_00"]
+		return pokemon_templates["SPINDA"]
 	elif mon == "SCATTERBUG":
 	#same for Scatterbug
 		return pokemon_templates["SCATTERBUG_ARCHIPELAGO"]
