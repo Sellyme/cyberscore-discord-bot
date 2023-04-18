@@ -319,22 +319,34 @@ def get_template(mon): #mon is always a name of format DARUMAKA_GALAR
 			mon = mon_chunks[0] + "_GALARIAN"
 		elif mon_chunks[1] == "HISUIAN_FORM)":
 			mon = mon_chunks[0] + "_HISUIAN"
-		elif mon_chunks[0] == "FRILLISH" or mon_chunks[0] == "PYROAR" or mon_chunks[0] == "Meowstic":
+		elif mon_chunks[0] == "FRILLISH" or mon_chunks[0] == "JELLICENT" or mon_chunks[0] == "PYROAR" or mon_chunks[0] == "MEOWSTIC":
 		#Pokemon where user display is Male/Female, but game master is Normal/Female (lmao wtf)
-			mon = mon_chunks[0]+"_"+mon_chunks[1].replace(")","").replace("MALE","NORMAL")
+			mon = mon_chunks[0]+"_"+mon_chunks[1]
+			mon = mon.replace(")","").replace("_MALE","_NORMAL")
 		else:
 		#Pokemon with "Pokemon (Form)" names. In many cases the form has a suffix, which we strip.
-			mon = mon_chunks[0]+"_"+mon_chunks[1].replace(")","").replace("_FORME","").replace("_CLOAK","").replace("_FORM","").replace("_DRIVE","").replace("_FLOWER","").replace("_TRIM","").replace("_SIZE","").replace("_STYLE","").replace("POM_POM","POMPOM")
+			mon = mon_chunks[0]+"_"+mon_chunks[1].replace(")","").replace("_FORME","").replace("_CLOAK","").replace("_FORM","").replace("_DRIVE","").replace("_FLOWER","").replace("_TRIM","").replace("_SIZE","").replace("_STYLE","").replace("POM_POM","POMPOM").replace("SUNSHINE","SUNNY").replace("_MODE","")
 			#note the "POMPOM" special case for Oricorio
 			#this is the only Pokemon where the game master strips "-" instead of replacing with "_"
+			#also note "Sunshine" (as shown in dex) being replaced with "Sunny" (as in GM) for Cherrim. 
 
 	#print("Searching template for", mon)
 	
-	#handle Nidoran
+	#handle edge cases
 	if mon == "NIDORANF" or mon == "NIDORAN_F":
 		return pokemon_templates["NIDORAN_F"]
 	elif mon == "NIDORANM" or mon == "NIDORAN_M":
 		return pokemon_templates["NIDORAN_M"]
+	elif mon == "ZACIAN":
+	#zac/zam do not display form names in-game yet, but rely on them in gm
+		return pokemon_templates["ZACIAN_HERO"]
+	elif mon == "ZAMAZENTA":
+		return pokemon_templates["ZAMAZENTA_HERO"]
+	
+	#handle Rotom, which is stored in GM as ROTOM_TYPE but in dex as "Type Rotom"
+	if "ROTOM" in mon:
+		mon_chunks = mon.split("_")
+		mon = mon_chunks[1]+"_"+mon_chunks[0]
 
 	if mon in pokemon_templates:
 		#print("Found, returning")
@@ -342,12 +354,9 @@ def get_template(mon): #mon is always a name of format DARUMAKA_GALAR
 	elif mon+"_NORMAL" in pokemon_templates:
 		#print("Found (Normal), returning")
 		return pokemon_templates[mon+"_NORMAL"]
-	elif mon == "SPINDA":
-	#we don't care about Spinda forms being separate, so just take any of them
-		return pokemon_templates["SPINDA"]
-	elif mon == "SCATTERBUG":
+	elif mon == "SCATTERBUG" or mon == "SPEWPA" or mon == "VIVILLON":
 	#same for Scatterbug
-		return pokemon_templates["SCATTERBUG_ARCHIPELAGO"]
+		return pokemon_templates[mon+"_ARCHIPELAGO"]
 	else:
 		print("Couldn't find template for",mon)
 		return False
