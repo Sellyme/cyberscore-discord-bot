@@ -415,9 +415,10 @@ def analyse_score(score):
 	#first, generate the numbers indicating rarity
 	#we check that this is >0 first to avoid reporting incorrect data for XXS heights (see below)
 	if chance_to_set > 0:
-		perc = str(round(chance_to_set * 100,3))
-		frac = str(round(1/chance_to_set))
-		output += "This score was a " +perc+"% chance of occurring (1 in "+frac+")"
+		frac = round(1/chance_to_set)
+		size = max(3,round(math.log(frac,10))-1) #this will show e.g., 5 decimals for a 1 in 1mil chance
+		perc = str(round(chance_to_set * 100,size))
+		output += "This score was a " +perc+"% chance of occurring (1 in "+str(frac)+")"
 	else:
 		output += "This score appears to be impossible. If it's definitely correct, yell at <@101709643822157824> to fix his code."
 
