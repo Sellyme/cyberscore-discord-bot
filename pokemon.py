@@ -323,7 +323,9 @@ def format_name(name):
 			name = name.replace(char, "")
 	return name
 
-def get_template(mon): #mon is always a name of format DARUMAKA_GALAR
+#takes any formatted name, and then converts it into the exact name used in the pokemon_templates dict
+#this is mostly just converting form names and handling edge cases like Nidoran
+def get_template_name(mon):
 	#handle any conversions directly from CS chart names
 	if "(" in mon:
 		#pull out the mon name, and put the form info in a second entry
@@ -344,38 +346,42 @@ def get_template(mon): #mon is always a name of format DARUMAKA_GALAR
 			mon = mon_chunks[0]+"_"+mon_chunks[1].replace(")","").replace("_FORME","").replace("_CLOAK","").replace("_FORM","").replace("_DRIVE","").replace("_FLOWER","").replace("_TRIM","").replace("_SIZE","").replace("_STYLE","").replace("POM_POM","POMPOM").replace("SUNSHINE","SUNNY").replace("_MODE","")
 			#note the "POMPOM" special case for Oricorio
 			#this is the only Pokemon where the game master strips "-" instead of replacing with "_"
-			#also note "Sunshine" (as shown in dex) being replaced with "Sunny" (as in GM) for Cherrim. 
+			#also note "Sunshine" (as shown in dex) being replaced with "Sunny" (as in GM) for Cherrim.
 
-	#print("Searching template for", mon)
-	
 	#handle edge cases
 	if mon == "NIDORANF" or mon == "NIDORAN_F":
-		return pokemon_templates["NIDORAN_F"]
+		return "NIDORAN_F"
 	elif mon == "NIDORANM" or mon == "NIDORAN_M":
-		return pokemon_templates["NIDORAN_M"]
+		return "NIDORAN_M"
 	elif mon == "ZACIAN":
 	#zac/zam do not display form names in-game yet, but rely on them in gm
-		return pokemon_templates["ZACIAN_HERO"]
+		return "ZACIAN_HERO"
 	elif mon == "ZAMAZENTA":
-		return pokemon_templates["ZAMAZENTA_HERO"]
+		return "ZAMAZENTA_HERO"
 	
 	#handle Rotom, which is stored in GM as ROTOM_TYPE but in dex as "Type Rotom"
 	if "ROTOM" in mon:
 		mon_chunks = mon.split("_")
-		mon = mon_chunks[1]+"_"+mon_chunks[0]
+		return mon_chunks[1]+"_"+mon_chunks[0]
 
 	if mon in pokemon_templates:
+		#any simple matches can be returned verbatim
 		#print("Found, returning")
-		return pokemon_templates[mon]
+		return mon
 	elif mon+"_NORMAL" in pokemon_templates:
+		#pokemon with shadow forms need the "_NORMAL" suffix
 		#print("Found (Normal), returning")
-		return pokemon_templates[mon+"_NORMAL"]
+		return mon+"_NORMAL"
 	elif mon == "SCATTERBUG" or mon == "SPEWPA" or mon == "VIVILLON":
-	#same for Scatterbug
-		return pokemon_templates[mon+"_ARCHIPELAGO"]
+		#we don't care which Scatterbug form we return, so just pick any
+		return mon+"_ARCHIPELAGO"
 	else:
 		print("Couldn't find template for",mon)
 		return False
+
+def get_template(mon): #mon is always a name of format DARUMAKA_GALAR
+	template_name = get_template_name(mon)
+	return pokemon_templates[template_name]
 
 def analyse_score(score):
 	#get Pokemon from the chart name
