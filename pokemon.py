@@ -1,5 +1,6 @@
 import requests, re, json, csv, math
 import cmfn #common functions
+from pokemon_cdfs.xxl_classes_dict import xxl_sizes #dictionary mapping pokemon_templates keys to XXL-1, XXL-2, or XXL-3
 
 pokemon_templates = {}
 pokemon_forms_by_id = {}
@@ -233,8 +234,19 @@ def get_height_chance(mon, height):
 			win_chance += min(1.50 - winning_variate, 0.25) / 40 / 0.25
 		if winning_variate < 1.25: #avg
 			win_chance += (1.25 - winning_variate) / 500 * 471 / 0.500
-		
+
+		#then check what XXL class the Pokemon is in
+		template_name = get_template_name(mon)
+		xxl_known = False
+		if template_name in xxl_sizes:
+			if xxl_sizes[template_name] != None:
+				xxl_known = True
+				xxl_class = xxl_sizes[template_name]
+		else:
+			print("Warning: Pokemon", mon, "not found in xxl_class_sizes dict")
+
 		#finally, calculate all three possible XXL classes on top of the base stats
+		#(this is done even if we know the class just to make things simpler when we *don't*
 		win_chances = [win_chance, win_chance, win_chance]
 
 		#XXL1
@@ -249,8 +261,12 @@ def get_height_chance(mon, height):
 		win_chances[2] += min(max(0, 2.00 - winning_variate), 0.10) / 250 / 20 / 0.10
 		if winning_variate < 1.90:
 			win_chances[2] += min(1.90 - winning_variate, 0.40) / 250 / 20 * 19 / 0.40
+			
+		#if we know the class, only return that one:
+		if xxl_known:
+			return [category, [win_chances[xxl_class-1]], xxl_known]
 
-		return [category, win_chances]
+		return [category, win_chances, xxl_known]
 
 def get_weight_chance(mon, weight):
 	win_chances = [0, 0, 0]
