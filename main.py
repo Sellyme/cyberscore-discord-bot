@@ -12,7 +12,9 @@ import scrape, config, pokemon #custom imports
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 
-client = discord.Client(intents=discord.Intents.default())
+intents = discord.Intents.default()
+intents.message_content = True
+client = discord.Client(intents=intents)
 infeng = inflect.engine()
 
 firstLoad = True #check this on_ready() and then set it to false so we never duplicate the threads
