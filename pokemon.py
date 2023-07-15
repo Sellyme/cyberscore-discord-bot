@@ -88,17 +88,46 @@ def get_game_master():
 			pokemon_id = m.group(1)
 			pokemon_name = m.group(2)
 
+			#hardcode Nidoran genders + some weird mons that aren't stored consistently
 			if pokemon_name == "NIDORAN":
 				if pokemon_id == "0029":
 					pokemon_name = "NIDORAN_F"
 				elif pokemon_id == "0032":
 					pokemon_name = "NIDORAN_M"
 
+			gm_sizes = template['data']['pokemonExtendedSettings']['obPokemonSizeSettings']
 			if pokemon_name in pokemon_templates:
-				pokemon_templates[pokemon_name]['sizeclasses'] = template['data']['pokemonExtendedSettings']['obPokemonSizeSettings']
+				pokemon_templates[pokemon_name]['sizeclasses'] = convert_gm_sizes(gm_sizes)
+			else:
+				#some mons have inconsistent game master data, and we need to manually correct them
+				#hopefully these snippets are written such that if this is ever fixed, they never get reached
+				if pokemon_name == "BEARTIC":
+					pokemon_templates["BEARTIC_NORMAL"]['sizeclasses'] = convert_gm_sizes(gm_sizes)
+				elif pokemon_name == "AVALUGG":
+					#Hisuian Avalugg and Kalos Avalugg both use the same size data?? wtf are you doing niantic
+					classes = convert_gm_sizes(gm_sizes)
+					pokemon_templates["AVALUGG_HISUIAN"]['sizeclasses'] = classes
+					pokemon_templates["AVALUGG_NORMAL"]['sizeclasses'] = classes
+				elif pokemon_name+"_NORMAL" in pokemon_templates:
+					#we use e.g., "BULBASAUR_NORMAL" instead of "BULBASAUR" when both exist
+					#in cases where both names exist we can just ignore the latter
+					#note that we do need to periodically manually check for errors like Beartic
+					#where both templates exist but only the latter has size data
+					continue
+				#else:
+					#loads of stuff in here is costume forms or things like Giratina
+					#where there's "GIRATINA" but all actual mons are "GIRATINA_ORIGIN" or "GIRATINA_ALTERED"
+					#may be worth enabling the debug and sanity-checking it periodically though
+					#print("Error: Found size data for Pokemon",pokemon_name,"but could not match it to a template")
 
 	#print(pokemon_forms_by_name)
 	print("Game master loaded")
+
+def convert_gm_sizes(obPokemonSizeSettings):
+	classes = []
+	for item in obPokemonSizeSettings:
+		classes.append(obPokemonSizeSettings[item])
+	return classes
 
 def get_forms(mon, type): #type is either "name" or "number"
 	if mon == "0029" or mon == "0032" or mon.startswith("NIDORAN"):
