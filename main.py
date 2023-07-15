@@ -219,7 +219,6 @@ async def top_submitters(days = 1, idx = 0, channel_id = config.leaderboard_chan
 	embed.timestamp = datetime.utcnow()
 	await channel.send(embed=embed)
 
-
 async def profile_stats(message):
 	channel = client.get_channel(message.channel.id)
 
@@ -491,21 +490,13 @@ async def compare_height(message):
 	
 	size_str = "larger" if result[0] > 0 else "smaller"
 	output = "Chance of a"+a_an+" " + m.group(1).title() + " " + size_str + " than " + m.group(2) + " m:\n"
-	win_chances = result[1]
-	
-	if len(win_chances) == 1 or round(win_chances[0],5) == round(win_chances[1],5) == round(win_chances[2],5):
-		if win_chances[0] > 0:
-			output += f"{win_chances[0]:.3%}"
-		else:
-			output = "A"+a_an+" " + m.group(1).title() + " " + size_str + " than " + m.group(2) +" m is not possible."
+	win_chance = result[1]
+
+	if win_chance > 0:
+		output += f"{win_chance:.3%}"
 	else:
-		output += "Class 1: "
-		output += f"{win_chances[0]:.3%}" if win_chances[0] > 0 else "Not Possible"
-		output += "\nClass 2: "
-		output += f"{win_chances[1]:.3%}" if win_chances[1] > 0 else "Not Possible"
-		output += "\nClass 3: "
-		output += f"{win_chances[2]:.3%}" if win_chances[2] > 0 else "Not Possible"
-	
+		output = "A"+a_an+" " + m.group(1).title() + " " + size_str + " than " + m.group(2) +" m is not possible."
+
 	await message.channel.send(output)
 
 async def compare_weight(message):
@@ -523,23 +514,15 @@ async def compare_weight(message):
 
 	size_str = "heavier" if result[0] > 0 else "lighter"
 	output = "Chance of a " + m.group(1).title() + " " + size_str + " than " + m.group(2) + " kg:\n"
-	win_chances = result[1]
-	print("win_chances", win_chances)
+	win_chance = result[1]
+	print("win_chance", win_chance)
 
-	#print(win_chances)
-	if round(win_chances[0],5) == round(win_chances[1],5) == round(win_chances[2],5):
-		if win_chances[0] > 0:
-			output += f"{win_chances[0]:.3%}"
-		else:
-			output = "A " + m.group(1).title() + " " + size_str + " than " + m.group(2) +" kg is not possible."
+	#print(win_chance)
+	if win_chance > 0:
+		output += f"{win_chance:.3%}"
 	else:
-		output += "Class 1: "
-		output += f"{win_chances[0]:.3%}" if win_chances[0] > 0 else "Not Possible"
-		output += "\nClass 2: "
-		output += f"{win_chances[1]:.3%}" if win_chances[1] > 0 else "Not Possible"
-		output += "\nClass 3: "
-		output += f"{win_chances[2]:.3%}" if win_chances[2] > 0 else "Not Possible"
-	
+		output = "A " + m.group(1).title() + " " + size_str + " than " + m.group(2) +" kg is not possible."
+
 	await message.channel.send(output)
 	
 
@@ -555,8 +538,6 @@ async def debug(message):
 		if debugParam.startswith("forcedaily "):
 			forceParam = debugParam.removeprefix("forcedaily ")
 			await scrape_leaderboard(forceParam)
-
-
 
 async def report_error(channel_id, message):
 	channel = client.get_channel(channel_id)

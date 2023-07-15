@@ -500,24 +500,14 @@ def analyse_score(score):
 	elif score['type'] == 1:
 		chance_to_set = get_height_chance(mon, size_beaten)[1]
 		chance_to_beat = get_height_chance(mon, size_set)[1]
-
 	print(chance_to_set)
-	#normalise the chances into a single value
-	#for now we just take the maximum value, so we never have any false positives
-	#in the future we should try to build a DB of what XXL class each species is in and pull the correct one
-	if len(chance_to_set) > 1:
-		chance_to_set = [max(chance_to_set)]
-	if len(chance_to_beat) > 1:
-		chance_to_beat = [max(chance_to_beat)]
-	chance_to_set = chance_to_set[0]
-	chance_to_beat = chance_to_beat[0]
 
 	#construct string
-	if chance_to_beat == 0:
-		output = "**New perfect score!**\n" #replace with "New perfect score" or "New rare score" accordingly
-	elif chance_to_set < 0.001:
+	if chance_to_beat == 0: #report all perfect scores
+		output = "**New perfect score!**\n"
+	elif chance_to_set <= 0.001: #report all 1 in >1k scores
 		output = "**New rare score!**\n"
-	else:
+	else: #don't report anything else
 		return None
 
 	#if we get here an output is desired
