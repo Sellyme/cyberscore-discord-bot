@@ -385,15 +385,14 @@ def get_weight_chance(mon, weight):
 	#for highest wins, the chance is now 1 - line[2]
 	#for lowest wins, the chance is line[2]
 
-	xxl_mult = round(classes[5] / dex_height, 2)
-	if xxl_mult == 1.55:
+	if classes[5] == 1.55:
 		cdf_idx = 0
-	elif xxl_mult == 1.75:
+	elif classes[5] == 1.75:
 		cdf_idx = 1
-	elif xxl_mult == 2:
+	elif classes[5] == 2:
 		cdf_idx = 2
 	else:
-		print("Error: XXL multiplier for",mon,"not valid; reporting",xxl_mult)
+		print("Error: XXL multiplier for",mon,"not valid; reporting",classes[5])
 
 	with open(cdf_files[cdf_idx], 'r', encoding='utf8') as cdf:
 		tsv_reader = csv.DictReader(cdf, delimiter="\t")
