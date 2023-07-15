@@ -481,16 +481,23 @@ async def compare_height(message):
 	result = pokemon.get_height_chance(mon, float(m.group(2)))
 	if not result:
 		await report_error(message.channel.id, "Pokemon "+m.group(1)+" could not be matched to any game master entry. Try searching for form names by dex number to see what valid names there are, e.g., `!forms 20` for Raticate")
+		return
+	
+	#get correct article
+	if m.group(1).title()[0] in "AEIOU":
+		a_an = "n"
+	else:
+		a_an = ""
 	
 	size_str = "larger" if result[0] > 0 else "smaller"
-	output = "Chance of a " + m.group(1).title() + " " + size_str + " than " + m.group(2) + " m:\n"
+	output = "Chance of a"+a_an+" " + m.group(1).title() + " " + size_str + " than " + m.group(2) + " m:\n"
 	win_chances = result[1]
 	
 	if len(win_chances) == 1 or round(win_chances[0],5) == round(win_chances[1],5) == round(win_chances[2],5):
 		if win_chances[0] > 0:
 			output += f"{win_chances[0]:.3%}"
 		else:
-			output = "A " + m.group(1).title() + " " + size_str + " than " + m.group(2) +" m is not possible."
+			output = "A"+a_an+" " + m.group(1).title() + " " + size_str + " than " + m.group(2) +" m is not possible."
 	else:
 		output += "Class 1: "
 		output += f"{win_chances[0]:.3%}" if win_chances[0] > 0 else "Not Possible"
