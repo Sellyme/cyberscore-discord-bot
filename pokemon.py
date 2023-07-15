@@ -5,6 +5,7 @@ from pokemon_cdfs.xxl_classes_dict import xxl_sizes #dictionary mapping pokemon_
 pokemon_templates = {}
 pokemon_forms_by_id = {}
 pokemon_forms_by_name = {}
+pokemon_class_boundaries = {}
 
 def get_game_master():
 	print("Loading game master")
@@ -58,8 +59,8 @@ def get_game_master():
 		pokemon_forms_by_name["SPINDA"] = ["SPINDA"]
 		pokemon_forms_by_id["0327"] = ["SPINDA"]
 		
+		#build template list
 		template_regex = r'^V(\d\d\d\d)_POKEMON_(.*)'
-
 		m = re.fullmatch(template_regex, template_name)
 		if m:
 			pokemon_id = m.group(1)
@@ -74,7 +75,29 @@ def get_game_master():
 			if pokemon_name in pokemon_forms_by_id[pokemon_id]:
 				pokemon_templates[pokemon_name] = template
 
-	print(pokemon_forms_by_name)
+	print("Templates built. Loading sizes")
+	#we've built the template list, now we do another loop to add extended size data
+	#we can't do this in the main loop because it comes before the templates in the gm
+	#ideally we'd just save these to memory in the first iteration and come back to them (TODO)
+	for template in gm:
+		template_name = template['templateId']
+		#Pull out size class boundaries
+		template_regex = r'^EXTENDED_V(\d\d\d\d)_POKEMON_(.*)'
+		m = re.fullmatch(template_regex, template_name)
+		if m:
+			pokemon_id = m.group(1)
+			pokemon_name = m.group(2)
+
+			if pokemon_name == "NIDORAN":
+				if pokemon_id == "0029":
+					pokemon_name = "NIDORAN_F"
+				elif pokemon_id == "0032":
+					pokemon_name = "NIDORAN_M"
+
+			if pokemon_name in pokemon_templates:
+				pokemon_templates[pokemon_name]['sizeclasses'] = template['data']['pokemonExtendedSettings']['obPokemonSizeSettings']
+
+	#print(pokemon_forms_by_name)
 	print("Game master loaded")
 
 def get_forms(mon, type): #type is either "name" or "number"
