@@ -1,3 +1,5 @@
 .env
 __pycache__
 pokemon_cdfs/xxl_classes_dict.py
+pokemon_cdfs/xxl_classes_sources/*
+pogo_game_master.json
