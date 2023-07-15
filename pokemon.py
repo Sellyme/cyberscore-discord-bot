@@ -29,7 +29,7 @@ def get_game_master():
 					pokemon_name = "NIDORAN_F"
 				elif pokemon_id == "0032":
 					pokemon_name = "NIDORAN_M"
-			
+
 			#print("Processing", pokemon_name, pokemon_id)
 			form_list = []
 			formSettings = template['data']['formSettings']
@@ -151,6 +151,7 @@ def get_type(mon):
 
 	return output
 
+#deprecated, no longer available in gm
 def get_bcr(mon):
 	template = get_template(mon)
 	bcr = template['data']['pokemonSettings']['encounter']['baseCaptureRate']
@@ -473,7 +474,10 @@ def get_template_name(mon):
 
 def get_template(mon): #mon is always a name of format DARUMAKA_GALAR
 	template_name = get_template_name(mon)
-	return pokemon_templates[template_name]
+	if template_name in pokemon_templates:
+		return pokemon_templates[template_name]
+	else:
+		return False
 
 def analyse_score(score):
 	#get Pokemon from the chart name
