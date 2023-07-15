@@ -253,18 +253,35 @@ def get_height_chance(mon, height):
 	#XXL2 Largest: 1.70 - 1.75 (1/250 chance XXL * 1/20 chance Largest)
 	#XXL3 Normal: 1.50 - 1.90 (1/250 chance XXL * 19/20 chance not Largest)
 	#XXL3 Largest: 1.90 - 2.00 (1/250 chance XXL * 1/20 chance Largest)
-	#Note that in the actual code we halve all of these values because we look at <avg and >avg separately
-	#A 1/250 chance of XXS becomes 1/125 when you're only considering sizes below average
+	
+	#Also note that Scatterbug's XXS class boundaries do not match every other species'
+	#and range from 0.25x to 0.50x.
+	#It appears that the same split occurs where the bottom 20% of this range only covers 5% of XXS spawns
 
-	#print("Height", height)
-	dex_height = get_dex_height(mon)
-	#print("Dex height", dex_height)
+	height_data = get_class_boundaries(mon)
+	if not height_data:
+		return False
+
+	dex_height = height_data[0]
+	classes = height_data[1]
+	#build class widths
+	xxs_width = classes[1] - classes[0]
+	xxs_small_width = xxs_width/5
+	xxs_big_width = xxs_width*4/5
+	xs_width = classes[2] - classes[1]
+	avg_width = classes[3] - classes[2]
+	xl_width = classes[4] - classes[3]
+	xxl_width = classes[5] - classes[4]
+	xxl_small_width = xxl_width*4/5
+	xxl_big_width = xxl_width/5
+
 	height_variate = height / dex_height
 	win_chance = 0
 
 	if height_variate < 1.00:
 		category = -1
 		
+		#todo - replace all of this with a very simple check against one step up in classes
 		#check what the winning score will be - if close to boundaries this can behave oddly
 		#todo - this solution is naive and doesn't handle non-contiguous "win" ranges that can occur
 		#at the upper border for XS (0.75x). Fortunately, for the use case of this bot, the 0.75x range
@@ -293,69 +310,49 @@ def get_height_chance(mon, height):
 		winning_variate = winning_score / dex_height
 		
 		print("Winning variate to beat",winning_score,"is",winning_variate)
-		if winning_variate <= 0.49:
-			return [category, [win_chance]] #scores this low are not possible
+		if winning_variate <= classes[0]:
+			return [category, win_chance] #scores this low are not possible, so return the default 0
 
 		#xxs low range
-		win_chance += min(max(0, winning_variate - 0.49), 0.002) / 250 / 20 / 0.002
-		
-		if winning_variate > 0.492: #xxs high range
-			win_chance += min(winning_variate - 0.492, 0.008) / 250 / 20 * 19 / 0.008
+		win_chance += min(max(0, winning_variate - classes[0]), xxs_small_width) / 250 / 20 / xxs_small_width
+		if winning_variate > (classes[0]+xxs_big_width): #xxs high range
+			win_chance += min(winning_variate - (classes[0]+xxs_big_width), xxs_big_width) / 250 / 20 * 19 / xxs_big_width
 		if winning_variate > 0.50: #xs
-			win_chance += min(winning_variate - 0.50, 0.25) / 40 / 0.25
+			win_chance += min(winning_variate - classes[1], xs_width) / 40 / xs_width
 		if winning_variate > 0.75: #avg
-			win_chance += (winning_variate - 0.75) / 500 * 471 / 0.500
+			win_chance += (winning_variate - classes[2]) / 500 * 471 / avg_width
 		
-		return [category, [win_chance]]
-
+		return [category, win_chance]
 	else: #for heights exactly 1.00 it doesn't matter in what direction we look, so look for higher
 		category = 1
 		winning_score = height + 0.005
 		winning_variate = winning_score / dex_height
-		if winning_variate >= 2.00:
-			return [category, [win_chance]] #scores this high are not possible
+		if winning_variate >= classes[5]:
+			return [category, win_chance] #scores this high are not possible, so return the default 0
 		
 		#first, assume that the Pokemon is NOT XXL, to get the simple maths out of the way
-		if winning_variate < 1.50: #xl
-			win_chance += min(1.50 - winning_variate, 0.25) / 40 / 0.25
-		if winning_variate < 1.25: #avg
-			win_chance += (1.25 - winning_variate) / 500 * 471 / 0.500
+		if winning_variate < classes[4]: #xl
+			win_chance += min(classes[4] - winning_variate, xl_width) / 40 / xl_width
+		if winning_variate < classes[3]: #avg
+			win_chance += (classes[3] - winning_variate) / 500 * 471 / avg_width
 
-		#then check what XXL class the Pokemon is in
-		template_name = get_template_name(mon)
-		xxl_known = False
-		if template_name in xxl_sizes:
-			if xxl_sizes[template_name] != None:
-				xxl_known = True
-				xxl_class = xxl_sizes[template_name]
-		else:
-			print("Warning: Pokemon", mon, "not found in xxl_class_sizes dict")
+		#xxl low range
+		if winning_variate < (classes[5] - xxl_small_width):
+			win_chance += min((classes[5]-xxl_small_width) - winning_variate, xxl_small_width) / 250 / 20 * 19 / xxl_small_width
+		#xxl high range
+		win_chance += min(max(0, classes[5] - winning_variate), xxl_big_width) / 250 / 20 / xxl_big_width
 
-		#finally, calculate all three possible XXL classes on top of the base stats
-		#(this is done even if we know the class just to make things simpler when we *don't*
-		win_chances = [win_chance, win_chance, win_chance]
-
-		#XXL1
-		win_chances[0] += min(max(0, 1.55 - winning_variate), 0.01) / 250 / 20 / 0.01
-		if winning_variate < 1.54:
-			win_chances[0] += min(1.54 - winning_variate, 0.04) / 250 / 20 * 19 / 0.04
-		#XXL2
-		win_chances[1] += min(max(0, 1.75 - winning_variate), 0.05) / 250 / 20 / 0.05
-		if winning_variate < 1.70:
-			win_chances[1] += min(1.70 - winning_variate, 0.20) / 250 / 20 * 19 / 0.20
-		#XXL3
-		win_chances[2] += min(max(0, 2.00 - winning_variate), 0.10) / 250 / 20 / 0.10
-		if winning_variate < 1.90:
-			win_chances[2] += min(1.90 - winning_variate, 0.40) / 250 / 20 * 19 / 0.40
-			
-		#if we know the class, only return that one:
-		if xxl_known:
-			return [category, [win_chances[xxl_class-1]], xxl_known]
-
-		return [category, win_chances, xxl_known]
+		#and return the output
+		#third output is xxl_known, which is now always true - TODO remove this
+		return [category, win_chance]
 
 def get_weight_chance(mon, weight):
-	win_chances = [0, 0, 0]
+	win_chance = 0
+	height_data = get_class_boundaries(mon)
+	if not height_data:
+		return False
+	dex_height = height_data[0]
+	classes = height_data[1]
 
 	dex_weight = get_dex_weight(mon)
 	if not dex_weight:
@@ -367,15 +364,16 @@ def get_weight_chance(mon, weight):
 		winning_score = weight - 0.005
 		winning_variate = math.floor(winning_score / dex_weight * 10000) / 10000
 		if winning_variate <= 0:
-			return [category, win_chances]
+			return [category, win_chance] #impossible to beat, return 0
 	else:
 		category = 1
 		winning_score = weight + 0.005
 		winning_variate = math.ceil(winning_score / dex_weight * 10000) / 10000
 		if winning_variate >= 2.75:
-			return [category, win_chances]
+			return [category, win_chance] #impossible to beat, return 0
 
 	cdf_files = [
+		#todo - add a custom CDF for Scatterbug? Scatterbug weights will be incorrect with these
 		'pokemon_cdfs/cdf_155.txt',
 		'pokemon_cdfs/cdf_175.txt',
 		'pokemon_cdfs/cdf_200.txt',
@@ -386,17 +384,25 @@ def get_weight_chance(mon, weight):
 	#for highest wins, the chance is now 1 - line[2]
 	#for lowest wins, the chance is line[2]
 
-	for i in range(0,3):
-		cdf_file = cdf_files[i]
-		with open(cdf_file, 'r', encoding='utf8') as cdf:
-			tsv_reader = csv.DictReader(cdf, delimiter="\t")
-			rows = list(tsv_reader)
-			if category == -1:
-				win_chances[i] = float(rows[line_num]['cumChance'])
-			else:
-				win_chances[i] = 1 - float(rows[line_num]['cumChance'])
+	xxl_mult = round(classes[5] / dex_height, 2)
+	if xxl_mult == 1.55:
+		cdf_idx = 0
+	elif xxl_mult == 1.75:
+		cdf_idx = 1
+	elif xxl_mult == 2:
+		cdf_idx = 2
+	else:
+		print("Error: XXL multiplier for",mon,"not valid; reporting",xxl_mult)
+
+	with open(cdf_files[cdf_idx], 'r', encoding='utf8') as cdf:
+		tsv_reader = csv.DictReader(cdf, delimiter="\t")
+		rows = list(tsv_reader)
+		if category == -1:
+			win_chance = float(rows[line_num]['cumChance'])
+		else:
+			win_chance = 1 - float(rows[line_num]['cumChance'])
 	
-	return [category, win_chances]
+	return [category, win_chance]
 
 #formats a pokemon name the way the game master stores them
 #with special characters either converted to ASCII (é→e) or stripped (:),
