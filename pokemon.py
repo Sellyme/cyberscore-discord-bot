@@ -316,8 +316,8 @@ def get_height_chance(mon, height):
 
 		#xxs low range
 		win_chance += min(max(0, winning_variate - classes[0]), xxs_small_width) / 250 / 20 / xxs_small_width
-		if winning_variate > (classes[0]+xxs_big_width): #xxs high range
-			win_chance += min(winning_variate - (classes[0]+xxs_big_width), xxs_big_width) / 250 / 20 * 19 / xxs_big_width
+		if winning_variate > (classes[0]+xxs_small_width): #xxs high range
+			win_chance += min(winning_variate - (classes[0]+xxs_small_width), xxs_big_width) / 250 / 20 * 19 / xxs_big_width
 		if winning_variate > 0.50: #xs
 			win_chance += min(winning_variate - classes[1], xs_width) / 40 / xs_width
 		if winning_variate > 0.75: #avg
@@ -338,8 +338,8 @@ def get_height_chance(mon, height):
 			win_chance += (classes[3] - winning_variate) / 500 * 471 / avg_width
 
 		#xxl low range
-		if winning_variate < (classes[5] - xxl_small_width):
-			win_chance += min((classes[5]-xxl_small_width) - winning_variate, xxl_small_width) / 250 / 20 * 19 / xxl_small_width
+		if winning_variate < (classes[5] - xxl_big_width):
+			win_chance += min((classes[5]-xxl_big_width) - winning_variate, xxl_small_width) / 250 / 20 * 19 / xxl_small_width
 		#xxl high range
 		win_chance += min(max(0, classes[5] - winning_variate), xxl_big_width) / 250 / 20 / xxl_big_width
 
