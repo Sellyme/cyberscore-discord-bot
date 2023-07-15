@@ -198,6 +198,40 @@ def get_dex_height(mon):
 	else:
 		return False
 
+#takes in a height from the game master and calculates the variate for that mon, rounding off fp errors
+def rounded_variate(height, dex_height):
+	return round(height/dex_height,5)
+
+#returns an array of [dex_height, [class1, class2, class3, etc]]
+#where class1...6 represent the (overlapping) lower and upper boundaries of each class 
+def get_class_boundaries(mon):
+	height = get_dex_height(mon)
+	#H-Avalugg is still VERY broken and doesn't have any actual data available
+	#right now the K-Avalugg data is being inserted into its template during gm loading
+	#so to make that workable, for the calculations we'll hardcode K-Avalugg's dex height
+	#and assume that H-Avalugg actually has all the same class boundaries
+	#this could be incorrect, but it's at least less incorrect than calculating them with the wrong heights
+	if "AVALUGG" in mon.upper() and "HISUI" in mon.upper():
+		real_height = height
+		height = get_dex_height("AVALUGG")
+	
+	template = get_template(mon)
+	if template:
+		classes = template['sizeclasses']
+		xxs_low = rounded_variate(classes[0], height)
+		xs_low = rounded_variate(classes[1], height)
+		xs_high = rounded_variate(classes[2], height)
+		xl_low = rounded_variate(classes[3], height)
+		xxl_low = rounded_variate(classes[4], height)
+		xxl_high = rounded_variate(classes[5], height)
+		#clean up the disgusting Avalugg mangling we just did
+		if "AVALUGG" in mon.upper() and "HISUI" in mon.upper():
+			height = real_height
+		#and return output
+		return [height, [xxs_low, xs_low, xs_high, xl_low, xxl_low, xxl_high]]
+	else:
+		return False
+
 #returns an array containing two elements:
 #first element is either negative (lowest wins) or positive (highest wins)
 #second element is an array of chances (where 0.50 == 50%)
