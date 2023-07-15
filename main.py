@@ -4,7 +4,7 @@ from dotenv import load_dotenv #discord auth
 from datetime import datetime, timedelta
 import asyncio #allow multiple threads
 import inflect #used for converting integers to ordinal positions
-import re
+import re, math
 import traceback
 
 import scrape, config, pokemon #custom imports
@@ -493,7 +493,10 @@ async def compare_height(message):
 	win_chance = result[1]
 
 	if win_chance > 0:
-		output += f"{win_chance:.3%}"
+		frac = round(1/win_chance)
+		size = max(3,round(math.log(frac,10))-1) #this will show e.g., 5 decimals for a 1 in 1mil chance
+		perc = str(round(win_chance * 100,size))
+		output += perc+"% (1 in "+str(frac)+")"
 	else:
 		output = "A"+a_an+" " + m.group(1).title() + " " + size_str + " than " + m.group(2) +" m is not possible."
 
