@@ -2,7 +2,7 @@ import requests, re, math, json
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 import pokemon
-import cmfn #common functions
+import cmfn, config
 
 CS_PREFIX = "https://cyberscore.me.uk"
 
@@ -16,7 +16,7 @@ def scrape_latest():
 	warn_keywords = ["emu", "emulator", "emulation", "emulated", "rom", "vba", "dolphin", "desmume", "retroarch", "p64", "swanstation", "mesen", "snes9x", "zsnes", "mgba", "libretro", "retropie", "melonds", "mame", "z64", "iso", "stella", "ppsspp", "epsxe", "gliden", "jabo"]
 
 	#perform web scrape
-	page = requests.get(URL)
+	page = requests.get(URL, timeout=config.timeout)
 	soup = BeautifulSoup(page.content, "html.parser")
 	
 	#load in the last update time
@@ -275,7 +275,7 @@ def scrape_leaderboard(type, force, idx, sortParam = 0):
 	previous_update = load_leaderboard(f)
 
 	#perform web scrape
-	page = requests.get(URL)
+	page = requests.get(URL, timeout=config.timeout)
 	soup = BeautifulSoup(page.content, "html.parser")
 	table = soup.find(id="scoreboard_classic")
 	players = list(table.find_all("tr"))
@@ -463,7 +463,7 @@ def scrape_top_submitters(days, idx, type): #type = "user" or "game"
 	URL = "https://cyberscore.me.uk/latest_subs_stats.php?updates=no&days=" + str(days)
 
 	#perform web scrape
-	page = requests.get(URL)
+	page = requests.get(URL, timeout=config.timeout)
 	soup = BeautifulSoup(page.content, "html.parser")
 
 	if type == "user":
@@ -509,7 +509,7 @@ def scrape_top_submitters(days, idx, type): #type = "user" or "game"
 
 def scrape_profile(username):
 	URL = "https://cyberscore.me.uk/profile-api/"+username+".json"
-	page = requests.get(URL)
+	page = requests.get(URL, timeout=config.timeout)
 	user = json.loads(page.content)
 	
 	#check that this is a valid username

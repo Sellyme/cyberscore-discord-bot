@@ -1,5 +1,5 @@
 import requests, re, json, csv, math
-import cmfn #common functions
+import cmfn, config
 from pokemon_cdfs.xxl_classes_dict import xxl_sizes #dictionary mapping pokemon_templates keys to XXL-1, XXL-2, or XXL-3
 
 pokemon_templates = {}
@@ -10,7 +10,7 @@ pokemon_class_boundaries = {}
 def get_game_master():
 	print("Loading game master")
 	URL = "https://raw.githubusercontent.com/PokeMiners/game_masters/master/latest/latest.json"
-	page = requests.get(URL)
+	page = requests.get(URL, timeout=config.timeout)
 	gm = json.loads(page.content)
 
 	for template in gm:
