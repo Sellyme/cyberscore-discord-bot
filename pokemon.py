@@ -489,6 +489,12 @@ def analyse_score(score):
 	#get Pokemon from the chart name
 	#todo - need to handle form names specially here
 	mon = format_name(score['chart'][8:])
+	
+	#don't analyse Pumpkaboo line as we don't know how it works yet
+	if "PUMPKABOO" in mon or "GOURGEIST" in mon:
+		print("Skipping analysis of",mon)
+		return False
+	
 	print("Analysing mon: ",mon)
 
 	size_set = score['score']
