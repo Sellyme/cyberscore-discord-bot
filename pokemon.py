@@ -206,6 +206,7 @@ def rounded_variate(height, dex_height):
 #returns an array of [dex_height, [class1, class2, class3, etc]]
 #where class1...6 represent the (overlapping) lower and upper boundaries of each class 
 def get_class_boundaries(mon):
+	mon = get_template_name(mon)
 	height = get_dex_height(mon)
 	#H-Avalugg is still VERY broken and doesn't have any actual data available
 	#right now the K-Avalugg data is being inserted into its template during gm loading
@@ -429,16 +430,22 @@ def get_template_name(mon):
 			mon = mon_chunks[0] + "_GALARIAN"
 		elif mon_chunks[1] == "HISUIAN_FORM)":
 			mon = mon_chunks[0] + "_HISUIAN"
-		elif mon_chunks[0] == "FRILLISH" or mon_chunks[0] == "JELLICENT" or mon_chunks[0] == "PYROAR" or mon_chunks[0] == "MEOWSTIC":
+		elif mon_chunks[0] == "FRILLISH" or mon_chunks[0] == "JELLICENT" or mon_chunks[0] == "PYROAR" or mon_chunks[0] == "MEOWSTIC" or mon_chunks[0] == "OINKOLOGNE":
 		#Pokemon where user display is Male/Female, but game master is Normal/Female (lmao wtf)
 			mon = mon_chunks[0]+"_"+mon_chunks[1]
 			mon = mon.replace(")","").replace("_MALE","_NORMAL")
+		elif mon_chunks[0] == "ZYGARDE":
+			mon = mon_chunks[0]+"_"+mon_chunks[1]
+			mon = mon.replace("%","_PERCENT").replace("10","TEN").replace("50","FIFTY").replace("_FORME)","")
 		else:
 		#Pokemon with "Pokemon (Form)" names. In many cases the form has a suffix, which we strip.
-			mon = mon_chunks[0]+"_"+mon_chunks[1].replace(")","").replace("_FORME","").replace("_CLOAK","").replace("_FORM","").replace("_DRIVE","").replace("_FLOWER","").replace("_TRIM","").replace("_SIZE","").replace("_STYLE","").replace("POM_POM","POMPOM").replace("SUNSHINE","SUNNY").replace("_MODE","")
+			mon_chunks[1] = mon_chunks[1].replace(")","").replace("_FORME","").replace("_CLOAK","").replace("_FORM","")
+			mon_chunks[1] = mon_chunks[1].replace("_DRIVE","").replace("_FLOWER","").replace("_TRIM","").replace("_SIZE","")
+			mon_chunks[1] = mon_chunks[1].replace("_STYLE","").replace("POM_POM","POMPOM").replace("SUNSHINE","SUNNY").replace("_MODE","")
 			#note the "POMPOM" special case for Oricorio
 			#this is the only Pokemon where the game master strips "-" instead of replacing with "_"
 			#also note "Sunshine" (as shown in dex) being replaced with "Sunny" (as in GM) for Cherrim.
+			mon = mon_chunks[0]+"_"+mon_chunks[1]
 
 	#handle edge cases
 	if mon == "NIDORANF" or mon == "NIDORAN_F":
