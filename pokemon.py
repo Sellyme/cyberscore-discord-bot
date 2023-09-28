@@ -618,8 +618,44 @@ def check_evo_chances(mon, weight, height, override_class_size=False):
 			#now for the weights
 			min_weight = settings['pokedexWeightKg'] * combined_variates[0]
 			max_weight = settings['pokedexWeightKg'] * combined_variates[1]
+			#and check what records to print
+			print_small = False
+			print_large = False
+			print_evo = None
+			if 'scores' in template:
+				print_small = variates[1][0] < 1
+				print_large = variates[1][1] > 1
+				short = evo['scores']['Pokédex Shortest']
+				tall = evo['scores']['Pokédex Tallest']
+				light = evo['scores']['Pokédex Lightest']
+				heavy = evo['scores']['Pokédex Heaviest']
+				print_evo = False #unless we trigger a possible higher score, don't evolve
+			
+			#start printing output
 			print("Height between",'{0:.2f}m'.format(min_height),"and",'{0:.2f}m'.format(max_height))
+			if print_small:
+				print("Record shortest: {0}m".format(short))
+				if short > min_height:
+					print_evo = True
+			if print_large:
+				print("Record tallest: {0}m".format(tall))
+				if tall < max_height:
+					print_evo = True
 			print("Weight between",'{0:.2f}kg'.format(min_weight),"and",'{0:.2f}kg'.format(max_weight))
+			if print_small:
+				print("Record lightest: {0}kg".format(light))
+				if light > min_weight:
+					print_evo = True
+			if print_large:
+				print("Record heaviest: {0}kg".format(heavy))
+				if heavy < max_weight:
+					print_evo = True
+			#check if we should evolve this mon
+			if print_evo == False:
+				print("DO NOT EVOLVE. No new record can be set.")
+			elif print_evo == True:
+				print("EVOLVE. This can set a new high score.")
+			
 			#and handle any third-stage evos
 			evos = evos + get_evolutions(evo)
 			count += 1
@@ -709,8 +745,7 @@ def load_all_charts():
 	chart_groups = pogo['chart_groups']
 	iter_groups = []
 	#removed Pokedex Lightest and Heaviest for a bit after having already iterated over it and fixed a bug with Heaviest
-	#target_groups = ["Pokédex Lightest", "Pokédex Heaviest", "Pokédex Shortest", "Pokédex Tallest"]
-	target_groups = ["Pokédex Shortest", "Pokédex Tallest"]
+	target_groups = ["Pokédex Lightest", "Pokédex Heaviest", "Pokédex Shortest", "Pokédex Tallest"]
 	
 	for group in chart_groups:
 		if group['group_name'] in target_groups:
@@ -777,3 +812,27 @@ def analyse_chart(chart_json):
 		if invalid_score: #[1] for Tallest
 			print("Invalid score on",gname,"–",cname,"by",user)
 			print("Top score of",score,"but best possible score is",best_score)
+
+def load_personal_records(sessid):
+	url = "https://cyberscore.me.uk/games/2006.json"
+	page = requests.get(url, cookies={'PHPSESSID':sessid})
+	data = json.loads(page.content)
+	chart_groups = data['chart_groups']
+	for group in chart_groups:
+		target_groups = ["Pokédex Lightest", "Pokédex Heaviest", "Pokédex Shortest", "Pokédex Tallest"]
+		gname = group['group_name']
+		if group['group_name'] not in target_groups:
+			continue
+		#if we get here, it's a size group and we want to save scores
+		for chart in group['charts']:
+			#find the exact template ready to add
+			cname = chart['chart_name']
+			template = get_template(format_name(cname[8:]))
+			if 'scores' not in template:
+				template['scores'] = {}
+		
+			if chart['record']['submission'] == None:
+				#this is an unsubmitted score
+				template['scores'][gname] = None
+			else:
+				template['scores'][gname] = chart['record']['submission']
