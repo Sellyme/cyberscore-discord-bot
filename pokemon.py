@@ -543,3 +543,95 @@ def analyse_score(score):
 		output += "This score appears to be impossible. If it's definitely correct, yell at <@101709643822157824> to fix his code."
 
 	return output
+
+def getHeightRange(mon):
+    template = get_template(mon)
+    min_xxs = template['sizeclasses'][0]
+    min_xs = template['sizeclasses'][1]
+    max_xxl = template['sizeclasses'][5]
+    min_xxs_round = math.floor(min_xxs*100)/100.0
+    min_floor_bug = math.floor((min_xs-0.01)*100)/100.0
+    #check to see if we can dip under the minimum because of the floor weirdness
+    score_min = min(min_xxs_round, min_floor_bug)
+    #build results
+    true_range = [min_xxs, max_xxl]
+    score_range = [score_min, round(max_xxl*100)/100.0]
+    return [true_range, score_range]
+
+#scraper for chart-by-chart
+def load_all_charts():
+	url = "https://cyberscore.me.uk/games/2006.json"
+	page = requests.get(url) #TODO - import cookies here in a safe way
+	pogo = json.loads(page.content)
+	
+	chart_groups = pogo['chart_groups']
+	iter_groups = []
+	#removed Pokedex Lightest and Heaviest for a bit after having already iterated over it and fixed a bug with Heaviest
+	#target_groups = ["Pokédex Lightest", "Pokédex Heaviest", "Pokédex Shortest", "Pokédex Tallest"]
+	target_groups = ["Pokédex Shortest", "Pokédex Tallest"]
+	
+	for group in chart_groups:
+		if group['group_name'] in target_groups:
+			iter_groups.append(group)
+	
+	#slightly redundant way of doing things, consolidate these loops if we don't need the data repeatedly
+	
+	#skip lightest/heaviest until later
+	for group in iter_groups:
+		gname = group['group_name']
+		for chart in group['charts']: #Shortest
+			cname = chart['chart_name']
+			chart_json = get_chart(chart)
+			
+			analyse_chart(chart_json)
+
+def get_chart(chart_data):
+	page = requests.get(chart_data['chart_url']['json'])
+	chart = json.loads(page.content)
+	#todo – change this path when set up properly
+	local_path = "C:/Programming/Python/CS/Discord bot/chart_jsons/" + str(chart_data['chart_id']) + ".json"
+	f=open(local_path, "w+")
+	json.dump(chart, f)
+	return chart
+
+def analyse_chart(chart_json):
+	if len(chart_json['scoreboard']) == 0:
+		print("No scores submitted for", cname)
+	
+	mon = format_name(cname[8:])
+
+	if "Lightest" in gname or "Heaviest" in gname:
+		wrange = [0, get_dex_weight(mon)*2.75]
+	elif "Shortest" in gname or "Tallest" in gname:
+		#don't analyse Pumpkaboo line as we don't know how it works yet
+		if "PUMPKABOO" in mon or "GOURGEIST" in mon:
+			print("Skipping height analysis of",mon)
+		
+		hrange = getHeightRange(mon)[1] #[1] takes only the score-rounded height range
+		if not hrange:
+			print("Error generating hrange for",cname)
+			return
+	
+	for sub in chart_json['scoreboard']:
+		rid = sub['record_id']
+		pos = sub['chart_pos'] #accounts for ties, e.g., a two-way tie for 1st will both show 1st
+		user = sub['username']
+		uid = sub['user_id']
+		score = sub['submission']
+
+		if "Lightest" in gname:
+			best_score = wrange[0]
+			invalid_score = score < best_score
+		elif "Heaviest" in gname:
+			best_score = wrange[1]
+			invalid_score = score > best_score
+		elif "Shortest" in gname:
+			best_score = hrange[0]
+			invalid_score = score < best_score
+		elif "Tallest" in gname:
+			best_score = hrange[1]
+			invalid_score = score > best_score
+
+		if invalid_score: #[1] for Tallest
+			print("Invalid score on",gname,"–",cname,"by",user)
+			print("Top score of",score,"but best possible score is",best_score)
