@@ -1,4 +1,5 @@
 import os #reading auth file
+import sys #needed to test if we're in IDLE
 import discord #discord bot
 from dotenv import load_dotenv #discord auth
 from datetime import datetime, timedelta
@@ -549,4 +550,9 @@ async def report_error(channel_id, message):
 	channel = client.get_channel(channel_id)
 	await channel.send(message)
 
-client.run(TOKEN)
+if 'idlelib.run' not in sys.modules:
+	client.run(TOKEN)
+else:
+	pokemon.get_game_master()
+	def chevo(x,y,z,a=False):
+		pokemon.check_evo_chances(x,y,z,a)

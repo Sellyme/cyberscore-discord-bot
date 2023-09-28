@@ -485,6 +485,148 @@ def get_template(mon): #mon is always a name of format DARUMAKA_GALAR
 	else:
 		return False
 
+def get_variates(mon, height, weight):
+	mon = get_template_name(mon)
+
+	#if mon name was incorrect, fail out
+	if not mon:
+		return False
+
+	min_height = height-0.005
+	max_height = height+0.005
+	height_data = get_class_boundaries(mon)
+	dex_height = height_data[0]
+	classes = height_data[1]
+	
+	min_height_variate = min_height / dex_height
+	max_height_variate = max_height / dex_height
+
+	min_weight = weight-0.005
+	max_weight = weight+0.005
+	dex_weight = get_dex_weight(mon)
+	min_final_weight_variate = min_weight / dex_weight
+	max_final_weight_variate = max_weight / dex_weight
+	
+	if min_height_variate < classes[4]: #everything except XXL
+		#formula for classes 1-4 is as follows:
+		#final_weight_variate = weight_variate + (height_variate^2 - 1)
+		#final_weight_variate is a relatively well-known value
+		#so the minimum possible weight variate occurs when the height variate is as BIG as possible
+		#and therefore the weight variate has to be lower to balance it out to the final value
+		min_weight_variate = min_final_weight_variate - (max_height_variate**2 - 1)
+		#and the other way around for the max weight variate
+		max_weight_variate = max_final_weight_variate - (min_height_variate**2 - 1)
+	else: #XXL mons
+		#formula for class 5 is as follows:
+		#final_weight_variate = weight_variate + (height_variate - 1)
+		min_weight_variate = min_final_weight_variate - (max_height_variate - 1)
+		max_weight_variate = max_final_weight_variate - (min_height_variate - 1)
+	#todo - clean up this logic so that something that could be in either class takes the min/max of each
+	
+	#print("Weight variate is between",min_weight_variate,"and",max_weight_variate)
+	#print("Height variate is between",min_height_variate,"and",max_height_variate)
+
+	return [[min_weight_variate, max_weight_variate], [min_height_variate, max_height_variate]]
+
+def get_evolutions(template):
+	settings = template['data']['pokemonSettings']
+	if "evolutionBranch" not in settings:
+		return []
+	
+	branches = settings['evolutionBranch']
+	evolution_templates = []
+	for branch in branches:
+		if 'temporaryEvolution' in branch:
+			continue
+		elif 'form' in branch:
+			evo_name = branch['form']
+		else:
+			evo_name = branch['evolution']
+		evo_template = get_template(evo_name)
+		evolution_templates.append(evo_template)
+	
+	return evolution_templates
+
+def check_evo_chances(mon, weight, height, override_class_size=False):
+	#todo - implement override_class_size when this is unknowable from the height
+	mon = format_name(mon)
+	variates = get_variates(mon, height, weight)
+
+	#if mon name was incorrect, fail out
+	if not variates:
+		return False
+
+	template = get_template(mon)
+	
+	#check class size
+	classes = get_class_boundaries(mon)
+	min_class_boundaries = classes[1][:5]
+	max_class_boundaries = classes[1][1:]
+	if override_class_size:
+		overrides = ["XXS", "XS", "AVG", "XL", "XXL"]
+		min_class_size = override_class_size - 1
+		max_class_size = override_class_size - 1
+		print("Overriding class size to",overrides[override_class_size - 1])
+	else:
+		if variates[1][0] < 0.50:
+			min_class_size = 0
+		elif variates[1][0] < 0.75:
+			min_class_size = 1
+		elif variates[1][0] < 1.25:
+			min_class_size = 2
+		elif variates[1][0] < 1.50:
+			min_class_size = 3
+		else:
+			min_class_size = 4
+		
+		if variates[1][1] < 0.50:
+			max_class_size = 0
+		elif variates[1][1] < 0.75:
+			max_class_size = 1
+		elif variates[1][1] < 1.25:
+			max_class_size = 2
+		elif variates[1][1] < 1.50:
+			max_class_size = 3
+		else:
+			max_class_size = 4
+
+	if max_class_size != min_class_size:
+		print("Warning: class size unknown")
+	
+	#because the height variates reroll completely on evolve, the ones of the prevo are irrelevant
+	#so we just over-write them
+	variates[1][0] = min_class_boundaries[min_class_size]
+	variates[1][1] = max_class_boundaries[max_class_size]
+
+	#combine both height and weight variates into one number for final weight
+	combined_variates = [(variates[0][0] + (variates[1][0]**2 - 1)), (variates[0][1] + (variates[1][1]**2 - 1))]
+
+	evos = get_evolutions(template)
+	count = 0
+	if len(evos) > 0:
+		while count < len(evos):
+			evo = evos[count]
+			settings = evo['data']['pokemonSettings']
+			
+			#for mons with split genders (e.g., Pyroar) this DOES print both
+			#but doesn't indicate which is which. Should probably fix at some point
+			print("Calculating sizes for",settings['pokemonId'])
+			
+			#calculate min/max heights
+			min_height = settings['pokedexHeightM'] * variates[1][0]
+			max_height = settings['pokedexHeightM'] * variates[1][1]
+			#now for the weights
+			min_weight = settings['pokedexWeightKg'] * combined_variates[0]
+			max_weight = settings['pokedexWeightKg'] * combined_variates[1]
+			print("Height between",'{0:.2f}m'.format(min_height),"and",'{0:.2f}m'.format(max_height))
+			print("Weight between",'{0:.2f}kg'.format(min_weight),"and",'{0:.2f}kg'.format(max_weight))
+			#and handle any third-stage evos
+			evos = evos + get_evolutions(evo)
+			count += 1
+	else:
+		print("No evos found. Possible weight multipliers are in this range:")
+		print(combined_variates)
+
 def analyse_score(score):
 	#get Pokemon from the chart name
 	#todo - need to handle form names specially here
