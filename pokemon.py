@@ -187,6 +187,9 @@ def get_dex_weight(mon):
 	template = get_template(mon)
 	if template:
 		weight = template['data']['pokemonSettings']['pokedexWeightKg']
+		#why the hell do I need to hardcode so many fixes for Niantic's incompetence
+		if template['templateId'] == "V0194_POKEMON_WOOPER_PALDEA":
+			weight = 11.0
 		return weight
 	else:
 		return False
@@ -430,6 +433,8 @@ def get_template_name(mon):
 			mon = mon_chunks[0] + "_GALARIAN"
 		elif mon_chunks[1] == "HISUIAN_FORM)":
 			mon = mon_chunks[0] + "_HISUIAN"
+		elif mon_chunks[1] == "PALDEAN_FORM)":
+			mon = mon_chunks[0] + "_PALDEA"
 		elif mon_chunks[0] == "FRILLISH" or mon_chunks[0] == "JELLICENT" or mon_chunks[0] == "PYROAR" or mon_chunks[0] == "MEOWSTIC" or mon_chunks[0] == "OINKOLOGNE":
 		#Pokemon where user display is Male/Female, but game master is Normal/Female (lmao wtf)
 			mon = mon_chunks[0]+"_"+mon_chunks[1]
