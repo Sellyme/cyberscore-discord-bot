@@ -466,7 +466,10 @@ def get_template_name(mon):
 	#handle Rotom, which is stored in GM as ROTOM_TYPE but in dex as "Type Rotom"
 	if "ROTOM" in mon:
 		mon_chunks = mon.split("_")
-		return mon_chunks[1]+"_"+mon_chunks[0]
+		if mon_chunks[0] == "ROTOM":
+			return mon
+		else:
+			return mon_chunks[1]+"_"+mon_chunks[0]
 
 	if mon in pokemon_templates:
 		#any simple matches can be returned verbatim
@@ -509,6 +512,7 @@ def get_variates(mon, height, weight):
 	min_weight = weight-0.005
 	max_weight = weight+0.005
 	dex_weight = get_dex_weight(mon)
+
 	min_final_weight_variate = min_weight / dex_weight
 	max_final_weight_variate = max_weight / dex_weight
 	
