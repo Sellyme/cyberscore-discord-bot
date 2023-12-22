@@ -368,13 +368,13 @@ def get_weight_chance(mon, weight):
 	if weight_variate < 1.00:
 		category = -1
 		winning_score = weight - 0.005
-		winning_variate = math.floor(winning_score / dex_weight * 10000) / 10000
+		winning_variate = winning_score / dex_weight
 		if winning_variate <= 0:
 			return [category, win_chance] #impossible to beat, return 0
 	else:
 		category = 1
 		winning_score = weight + 0.005
-		winning_variate = math.ceil(winning_score / dex_weight * 10000) / 10000
+		winning_variate = winning_score / dex_weight
 		if winning_variate >= 2.75:
 			return [category, win_chance] #impossible to beat, return 0
 
@@ -386,9 +386,13 @@ def get_weight_chance(mon, weight):
 	]
 	
 	#line number we're targeting will be 1 higher than the variate * 10k
-	line_num = int(winning_variate * 10000) + 1
+	win_var_10k = winning_variate * 10000
+	float_line_num = win_var_10k % 1
+	line_num = math.floor(win_var_10k)
 	#for highest wins, the chance is now 1 - line[2]
 	#for lowest wins, the chance is line[2]
+	print("Winning variate:", winning_variate)
+	#print("Line num:", line_num, float_line_num)
 
 	if classes[5] == 1.55:
 		cdf_idx = 0
@@ -404,8 +408,11 @@ def get_weight_chance(mon, weight):
 		rows = list(tsv_reader)
 		if category == -1:
 			win_chance = float(rows[line_num]['cumChance'])
+			win_chance += (float(rows[line_num+1]['cumChance']) - win_chance) * float_line_num
 		else:
-			win_chance = 1 - float(rows[line_num]['cumChance'])
+			row_chance = float(rows[line_num]['cumChance'])
+			win_chance = 1 - row_chance
+			win_chance -= (float(rows[line_num+1]['cumChance']) - row_chance) * float_line_num
 	
 	return [category, win_chance]
 
