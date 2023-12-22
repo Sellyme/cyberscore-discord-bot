@@ -1,6 +1,7 @@
 import requests, re, json, csv, math
 import cmfn, config
 from pokemon_cdfs.xxl_classes_dict import xxl_sizes #dictionary mapping pokemon_templates keys to XXL-1, XXL-2, or XXL-3
+from clrprint import clrprint
 
 pokemon_templates = {}
 pokemon_forms_by_id = {}
@@ -600,7 +601,7 @@ def check_evo_chances(mon, weight, height, override_class_size=False):
 			max_class_size = 4
 
 	if max_class_size != min_class_size:
-		print("Warning: class size unknown")
+		clrprint("Warning: class size unknown", clr="red")
 	
 	#because the height variates reroll completely on evolve, the ones of the prevo are irrelevant
 	#so we just over-write them
@@ -661,9 +662,9 @@ def check_evo_chances(mon, weight, height, override_class_size=False):
 					print_evo = True
 			#check if we should evolve this mon
 			if print_evo == False:
-				print("DO NOT EVOLVE. No new record can be set.")
+				clrprint("DO NOT EVOLVE. No new record can be set.", clr="black")
 			elif print_evo == True:
-				print("EVOLVE. This can set a new high score.")
+				clrprint("EVOLVE. This can set a new high score.", clr="green")
 			
 			#and handle any third-stage evos
 			evos = evos + get_evolutions(evo)
