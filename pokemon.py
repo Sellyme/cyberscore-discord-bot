@@ -683,6 +683,12 @@ def analyse_score(score):
 		print("Skipping analysis of",mon)
 		return False
 	
+	#don't analyse Zorua highest weights, because they're bugged in-game
+	if "ZORUA" in mon or "ZOROARK" in mon:
+		if score['polarity'] == 1 and score['type'] == 0:
+			print("Skipping analysis of heaviest",mon)
+			return False
+	
 	print("Analysing mon: ",mon)
 
 	size_set = score['score']
