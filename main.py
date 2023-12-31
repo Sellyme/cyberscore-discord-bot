@@ -227,8 +227,6 @@ async def profile_stats(message):
 		await report_error(message.channel.id, "Can not load profile without a username or user ID. Try e.g., `!profile Sellyme`")
 		return
 	else:
-		#"username" is a misnomer - it has to be a user ID for now
-		#but names will be accepted once the updated API is live, and this feature won't be public before then
 		username = args[1]
 
 	sub_milestones = [25,50,100,250,500,1000,2500,5000,10000,25000,50000,100000]
