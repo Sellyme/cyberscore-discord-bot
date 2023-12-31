@@ -143,11 +143,8 @@ async def scrape_leaderboard(type, force = False, idx = 0, channel_id = config.l
 	results = scrape.scrape_leaderboard(type, force, idx, sortParam)
 	#result should be a pure string
 	print(results)
-	if type == "Submissions" and not force:
-		#this board isn't too useful to output daily since the 24hr submitters board exists
-		return
 	#add some more user-friendly names for the embed titles where needed
-	elif type == "Video":
+	if type == "Video":
 		name = "Video Proof"
 	elif type == "Challenge":
 		name = "User Challenge"
@@ -180,9 +177,10 @@ async def scrape_leaderboard(type, force = False, idx = 0, channel_id = config.l
 	else:
 		name = type
 
-	#on the automated daily updates we already post the levels in the Incremental leaderboard
-	#so if this was a daily update of the levels, DON'T make a Discord message
-	if type != "Level" or force:
+	#level leaderboard is effectively printed in the VXP leaderboard
+	#and submissions leaderboard changes are shown in daily top subs
+	#so we don't print those two leaderboards by default.
+	if (type != "Level" and type != "Submissions") or force:
 		#create embed for Discord
 		embed = discord.Embed()
 		embed.add_field(name=name, value=results)
