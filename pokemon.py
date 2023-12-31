@@ -314,8 +314,7 @@ def get_height_chance(mon, height):
 			winning_score = height - 0.005
 
 		winning_variate = winning_score / dex_height
-		
-		print("Winning variate to beat",winning_score,"is",winning_variate)
+
 		if winning_variate <= classes[0]:
 			return [category, win_chance] #scores this low are not possible, so return the default 0
 
