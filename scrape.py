@@ -214,9 +214,11 @@ def scrape_leaderboard(type, force, idx, sortParam = 0):
 	if type == "Starboard":
 		URL = "https://cyberscore.me.uk/scoreboards/starboard"
 		f = open("leaderboards/starboard.csv", "r+")
+		archive = "leaderboards/archive/starboard/"
 	elif type == "Medal":
 		URL = "https://cyberscore.me.uk/scoreboards/medal"
 		f = open("leaderboards/medals.csv", "r+")
+		archive = "leaderboards/archive/medals/"
 		if sortParam == 1:
 			URL += "?manual_sort=gold"
 		elif sortParam == 2:
@@ -226,6 +228,7 @@ def scrape_leaderboard(type, force, idx, sortParam = 0):
 	elif type == "Trophy":
 		URL = "https://cyberscore.me.uk/scoreboards/trophy"
 		f = open("leaderboards/trophy.csv", "r+")
+		archive = "leaderboards/archive/trophy/"
 		if sortParam == 1:
 			URL += "?manual_sort=platinum"
 		elif sortParam == 2:
@@ -241,36 +244,47 @@ def scrape_leaderboard(type, force, idx, sortParam = 0):
 	elif type == "Arcade":
 		URL = "https://cyberscore.me.uk/scoreboards/arcade"
 		f = open("leaderboards/arcade.csv", "r+")
+		archive = "leaderboards/archive/arcade/"
 	elif type == "Solution":
 		URL = "https://cyberscore.me.uk/scoreboards/solution"
 		f = open("leaderboards/solution.csv", "r+")
+		archive = "leaderboards/archive/solution/"
 	elif type == "Challenge":
 		URL = "https://cyberscore.me.uk/scoreboards/challenge"
 		f = open("leaderboards/challenge.csv", "r+")
+		archive = "leaderboards/archive/challenge/"
 	elif type == "Collectible":
 		URL = "https://cyberscore.me.uk/scoreboards/collectible"
 		f = open("leaderboards/collectible.csv", "r+")
+		archive = "leaderboards/archive/collectible/"
 	elif type == "Incremental":
 		URL = "https://cyberscore.me.uk/scoreboards/incremental"
 		f = open("leaderboards/incremental.csv", "r+")
+		archive = "leaderboards/archive/incremental/"
 	elif type == "Level":
 		URL = "https://cyberscore.me.uk/scoreboards/incremental?manual_sort=cxp"
 		f = open("leaderboards/level.csv", "r+")
+		archive = "leaderboards/archive/level/"
 	elif type == "Rainbow":
 		URL = "https://cyberscore.me.uk/scoreboards/rainbow"
 		f = open("leaderboards/rainbow.csv", "r+")
+		archive = "leaderboards/archive/rainbow/"
 	elif type == "Proof":
 		URL = "https://cyberscore.me.uk/scoreboards/proof"
 		f = open("leaderboards/proof.csv", "r+")
+		archive = "leaderboards/archive/proof/"
 	elif type == "Video":
 		URL = "https://cyberscore.me.uk/scoreboards/vproof"
 		f = open("leaderboards/vproof.csv", "r+")
+		archive = "leaderboards/archive/vproof/"
 	elif type == "Submissions":
 		URL = "https://cyberscore.me.uk/scoreboards/submissions"
 		f = open("leaderboards/submissions.csv", "r+")
+		archive = "leaderboards/archive/submissions/"
 	elif type == "Speedrun":
 		URL = "https://cyberscore.me.uk/scoreboards/speedrun"
 		f = open("leaderboards/speedrun.csv", "r+")
+		archive = "leaderboards/archive/speedrun/"
 
 	previous_update = load_leaderboard(f)
 
@@ -450,8 +464,14 @@ def scrape_leaderboard(type, force, idx, sortParam = 0):
 		else:
 			save_data += str(i+1) + "," + user_name + "," + score_str.replace(",","") + "\n"
 
-	#only save the data if we did a daily update, so that score diffs are always relative
-	#to midnight UTC that day, and can't be disrupted by debugging
+	#save the data to the archive files every time someone does an update
+	curr_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+	arch_file = open(archive+curr_time+".csv", 'x')
+	save_leaderboard(save_data, arch_file)
+	arch_file.close()
+
+	#and then if this was a (non-forced) daily update, also save it to the base leaderboard files
+	#so we have a ~midnight UTC point of comparison for the score diffs each day
 	#we also avoid saving if we did a medal table scrape with a non-default sort
 	if(not force and not sortParam): #adjust this to force-overwrite
 		save_leaderboard(save_data, f)
