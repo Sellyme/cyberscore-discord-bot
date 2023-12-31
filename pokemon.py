@@ -103,6 +103,9 @@ def get_game_master():
 				#some mons have inconsistent game master data, and we need to manually correct them
 				#hopefully these snippets are written such that if this is ever fixed, they never get reached
 				if pokemon_name == "BEARTIC":
+					#this is actually wrong, Beartic size generation is just broken in the game
+					#this gives the numbers that SHOULD happen, but they don't in practice.
+					#it's likely defaulting to the old height/weight system instead
 					pokemon_templates["BEARTIC_NORMAL"]['sizeclasses'] = convert_gm_sizes(gm_sizes)
 				elif pokemon_name == "AVALUGG":
 					#Hisuian Avalugg and Kalos Avalugg both use the same size data?? wtf are you doing niantic
@@ -858,3 +861,50 @@ def load_personal_records(sessid):
 				template['scores'][gname] = None
 			else:
 				template['scores'][gname] = chart['record']['submission']
+
+#this function doesn't *do* anything, and isn't used by the rest of the module
+#but is useful to manually run occasionally to check if Niantic have broken any gm data
+#current expected output:
+#Scatterbug line XXS is 0.25x not 0.49x
+#H-Avalugg bounds use Avalugg's (this is hardcoded to correctly predict sizes)
+#Beartic doesn't have bounds (this won't print, as this program fixes it in template generation)
+#Pumpkaboo line is fucked
+#Size data not available for Cursola (likely just not implemented yet)
+def sanity_check_class_boundaries():
+	for mon in pokemon_templates:
+		template = pokemon_templates[mon]
+		if "sizeclasses" not in template:
+			print("Size data not available for",mon)
+			continue
+		
+		#only print one of each Scatterbug (they're all identical)
+		if "SCATTERBUG" in mon or "SPEWPA" in mon or "VIVILLON" in mon:
+			if "ARCHIPELAGO" not in mon:
+				continue
+		#Pumpkaboo line still uses old system
+		if "PUMPKABOO" in mon or "GOURGEIST" in mon:
+			if mon == "V0710_POKEMON_PUMPKABOO_AVERAGE":
+				print("Pumpkaboo is incompatible with the modern XXS/XXL system.")
+			continue
+		
+		classes = template['sizeclasses']
+		height = template['data']['pokemonSettings']['pokedexHeightM']
+		name = template['templateId']
+		if classes[0] != round(0.49 * height,5):
+			print("XXS lower bound for",name,"does not match")
+			print("Expected 0.49, got",round(classes[0]/height,5))
+		if classes[1] != round(0.50 * height,5):
+			print("XS lower bound for",name,"does not match")
+			print("Expected 0.50, got",round(classes[1]/height,5))
+		if classes[2] != round(0.75 * height,5):
+			print("XS upper bound for",name,"does not match")
+			print("Expected 0.75, got",round(classes[2]/height,5))
+		if classes[3] != round(1.25 * height,5):
+			print("XL lower bound for",name,"does not match")
+			print("Expected 1.25, got",round(classes[3]/height,5))
+		if classes[4] != round(1.50 * height,5):
+			print("XXL lower bound for",name,"does not match")
+			print("Expected 1.50, got",round(classes[4]/height,5))
+		if classes[5] != round(1.55 * height,5) and classes[5] != round(1.75 * height,5) and classes[5] != round(2 * height,5):
+			print("XXL upper bound for",name,"does not match")
+			print("Expected 1.55/1.75/2.00, got",round(classes[5]/height,5))
