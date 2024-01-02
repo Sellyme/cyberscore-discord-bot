@@ -691,7 +691,7 @@ def analyse_score(score):
 	if "PUMPKABOO" in mon or "GOURGEIST" in mon:
 		print("Skipping analysis of",mon)
 		return False
-	
+
 	#don't analyse Zorua highest weights, because they're bugged in-game
 	if "ZORUA" in mon or "ZOROARK" in mon:
 		if score['polarity'] == 1 and score['type'] == 0:
@@ -813,7 +813,7 @@ def analyse_chart(chart_json):
 		if not hrange:
 			print("Error generating hrange for",cname)
 			return
-	
+
 	for sub in chart_json['scoreboard']:
 		rid = sub['record_id']
 		pos = sub['chart_pos'] #accounts for ties, e.g., a two-way tie for 1st will both show 1st

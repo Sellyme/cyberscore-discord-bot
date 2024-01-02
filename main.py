@@ -136,6 +136,8 @@ async def scrape_leaderboards():
 			await asyncio.sleep(config.leaderboard_frequency)
 
 
+#async def scrape_level_changes():
+#	channel = config.
 
 async def scrape_leaderboard(type, force = False, idx = 0, channel_id = config.leaderboard_channel, sortParam = 0):
 	channel = client.get_channel(channel_id)
