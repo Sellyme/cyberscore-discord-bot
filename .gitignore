@@ -6,3 +6,5 @@ pokemon_cdfs/xxl_classes_sources/*
 pogo_game_master.json
 leaderboards/cyberscore-leaderboards*
 *.bak
+leaderboards/archive/*
+leaderboards/*.csv
