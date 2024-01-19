@@ -211,6 +211,7 @@ def scrape_latest():
 #for trophies, sortParam 0 = points, 1 = plats, and 2-6 represent gold, silver, bronze, 4th, 5th
 def scrape_leaderboard(type, force, idx, sortParam = 0):
 	#open previous leaderboard data
+	sortType = ""
 	if type == "Starboard":
 		URL = "https://cyberscore.me.uk/scoreboards/starboard"
 		f = open("leaderboards/starboard.csv", "r+")
@@ -220,27 +221,27 @@ def scrape_leaderboard(type, force, idx, sortParam = 0):
 		f = open("leaderboards/medals.csv", "r+")
 		archive = "leaderboards/archive/medals/"
 		if sortParam == 1:
-			URL += "?manual_sort=gold"
+			sortType = "gold"
 		elif sortParam == 2:
-			URL += "?manual_sort=silver"
+			sortType = "silver"
 		elif sortParam == 3:
-			URL += "?manual_sort=bronze"
+			sortType = "bronze"
 	elif type == "Trophy":
 		URL = "https://cyberscore.me.uk/scoreboards/trophy"
 		f = open("leaderboards/trophy.csv", "r+")
 		archive = "leaderboards/archive/trophy/"
 		if sortParam == 1:
-			URL += "?manual_sort=platinum"
+			sortType = "platinum"
 		elif sortParam == 2:
-			URL += "?manual_sort=gold"
+			sortType = "gold"
 		elif sortParam == 3:
-			URL += "?manual_sort=silver"
+			sortType = "silver"
 		elif sortParam == 4:
-			URL += "?manual_sort=bronze"
+			sortType = "bronze"
 		elif sortParam == 5:
-			URL += "?manual_sort=4th"
+			sortType = "4th"
 		elif sortParam == 6:
-			URL += "?manual_sort=5th"
+			sortType = "5th"
 	elif type == "Arcade":
 		URL = "https://cyberscore.me.uk/scoreboards/arcade"
 		f = open("leaderboards/arcade.csv", "r+")
@@ -285,6 +286,9 @@ def scrape_leaderboard(type, force, idx, sortParam = 0):
 		URL = "https://cyberscore.me.uk/scoreboards/speedrun"
 		f = open("leaderboards/speedrun.csv", "r+")
 		archive = "leaderboards/archive/speedrun/"
+
+	if sortParam:
+		URL += "?manual_sort=" + sortType
 
 	previous_update = load_leaderboard(f)
 
@@ -466,6 +470,8 @@ def scrape_leaderboard(type, force, idx, sortParam = 0):
 
 	#save the data to the archive files every time someone does an update
 	curr_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+	if sortType:
+		curr_time += "_"+sortType
 	arch_file = open(archive+curr_time+".csv", 'x')
 	save_leaderboard(save_data, arch_file)
 	arch_file.close()
