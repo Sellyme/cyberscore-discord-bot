@@ -96,7 +96,7 @@ def get_game_master():
 				elif pokemon_id == "0032":
 					pokemon_name = "NIDORAN_M"
 
-			gm_sizes = template['data']['pokemonExtendedSettings']['obPokemonSizeSettings']
+			gm_sizes = template['data']['pokemonExtendedSettings']['sizeSettings']
 			if pokemon_name in pokemon_templates:
 				pokemon_templates[pokemon_name]['sizeclasses'] = convert_gm_sizes(gm_sizes)
 			else:
