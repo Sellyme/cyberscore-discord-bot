@@ -641,15 +641,20 @@ def check_evo_chances(mon, weight, height, override_class_size=False):
 			print_small = False
 			print_large = False
 			print_evo = None
+
 			if 'scores' in template:
-				print_small = variates[1][0] < 1
-				print_large = variates[1][1] > 1
-				short = evo['scores']['Pokédex Shortest']
-				tall = evo['scores']['Pokédex Tallest']
-				light = evo['scores']['Pokédex Lightest']
-				heavy = evo['scores']['Pokédex Heaviest']
-				print_evo = False #unless we trigger a possible higher score, don't evolve
-			
+				#need to check both in case an evo exists that doesn't have a chart
+				if 'scores' in evo:
+					print_small = variates[1][0] < 1
+					print_large = variates[1][1] > 1
+					short = evo['scores']['Pokédex Shortest']
+					tall = evo['scores']['Pokédex Tallest']
+					light = evo['scores']['Pokédex Lightest']
+					heavy = evo['scores']['Pokédex Heaviest']
+					print_evo = False #unless we trigger a possible higher score, don't evolve
+				else:
+					clrprint("Chart missing for " + settings['pokemonId'], clr="red")
+
 			#start printing output
 			print("Height between",'{0:.2f}m'.format(min_height),"and",'{0:.2f}m'.format(max_height))
 			if print_small:
