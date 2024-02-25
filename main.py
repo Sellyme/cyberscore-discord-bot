@@ -554,3 +554,5 @@ else:
 	pokemon.get_game_master()
 	def chevo(x,y,z,a=False):
 		pokemon.check_evo_chances(x,y,z,a)
+	def bound(x):
+		pokemon.get_bounds(x)

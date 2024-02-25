@@ -241,6 +241,15 @@ def get_class_boundaries(mon):
 	else:
 		return False
 
+#formats get_class_boundaries to be human-readable for use in command line
+def get_bounds(mon):
+	mon = format_name(mon)
+	bounds = get_class_boundaries(mon)
+	print("XXS Min: %.4f" % (bounds[0]*bounds[1][0]))
+	print("XXS Max: %.4f" % (bounds[0]*bounds[1][1]))
+	print("XXL Min: %.4f" % (bounds[0]*bounds[1][4]))
+	print("XXL Max: %.4f" % (bounds[0]*bounds[1][5]))
+
 #returns an array containing two elements:
 #first element is either negative (lowest wins) or positive (highest wins)
 #second element is an array of chances (where 0.50 == 50%)
