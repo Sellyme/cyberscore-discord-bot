@@ -213,7 +213,6 @@ def rounded_variate(height, dex_height):
 #returns an array of [dex_height, [class1, class2, class3, etc]]
 #where class1...6 represent the (overlapping) lower and upper boundaries of each class 
 def get_class_boundaries(mon):
-	mon = get_template_name(mon)
 	height = get_dex_height(mon)
 	#H-Avalugg is still VERY broken and doesn't have any actual data available
 	#right now the K-Avalugg data is being inserted into its template during gm loading
@@ -486,7 +485,7 @@ def get_template_name(mon):
 	if "ROTOM" in mon:
 		mon_chunks = mon.split("_")
 		if mon_chunks[0] == "ROTOM":
-			return mon
+			return "ROTOM_NORMAL"
 		else:
 			return mon_chunks[1]+"_"+mon_chunks[0]
 
