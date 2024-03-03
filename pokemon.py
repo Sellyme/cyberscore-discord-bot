@@ -796,20 +796,21 @@ def load_all_charts():
 		gname = group['group_name']
 		for chart in group['charts']: #Shortest
 			cname = chart['chart_name']
-			chart_json = get_chart(chart)
+			chart_json = download_chart(chart)
 			
-			analyse_chart(chart_json)
+			analyse_chart(chart_json, gname, cname)
 
 def get_chart(chart_data):
+def download_chart(chart_data):
 	page = requests.get(chart_data['chart_url']['json'])
 	chart = json.loads(page.content)
 	#todo – change this path when set up properly
-	local_path = "C:/Programming/Python/CS/Discord bot/chart_jsons/" + str(chart_data['chart_id']) + ".json"
+	local_path = "D:/Programming/Cyberscore/Discord bot/chart_jsons/" + str(chart_data['chart_id']) + ".json"
 	f=open(local_path, "w+")
 	json.dump(chart, f)
 	return chart
 
-def analyse_chart(chart_json):
+def analyse_chart(chart_json, gname, cname):
 	if len(chart_json['scoreboard']) == 0:
 		print("No scores submitted for", cname)
 	
