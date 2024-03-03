@@ -834,6 +834,13 @@ def load_chart_from_disk(path):
 	chart_json = json.load(f)
 	return chart_json
 
+def get_leader(type, name):
+	chart = get_chart(type, name)
+	cname = chart['group_name'] + " – " + chart['chart_name']
+	score = chart['scoreboard'][0]
+	suffix_type = "kg" if (type == "Heaviest" or type == "Lightest") else "m"
+	print(score['username'], "is the leader on", cname, "with a score of", score['submission'], suffix_type)
+
 def get_user_score(scoreboard, user):
 	score = None
 	for sub in scoreboard:
