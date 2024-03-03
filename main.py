@@ -393,10 +393,10 @@ async def handle_submitters(message, type): #type is either "user" or "game"
 		if daysParam.isnumeric():
 			#isnumeric excludes negatives or decimals, which is good for this use case
 			days = int(daysParam)
-		elif daysParam == "ytd":
+		elif daysParam.lower() == "ytd":
 			#year-to-date stats, so get the current day of year index
 			days = int(format(datetime.utcnow(), '%j'))
-		elif daysParam == "all":
+		elif daysParam.lower() == "all":
 			if type == "game":
 				await report_error(message.channel.id, "'All' search is not currently supported for game submissions")
 				return
