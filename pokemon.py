@@ -2,11 +2,14 @@ import requests, re, json, csv, math
 import cmfn, config
 from pokemon_cdfs.xxl_classes_dict import xxl_sizes #dictionary mapping pokemon_templates keys to XXL-1, XXL-2, or XXL-3
 from clrprint import clrprint
+from os import listdir
+from os.path import isfile, join
 
 pokemon_templates = {}
 pokemon_forms_by_id = {}
 pokemon_forms_by_name = {}
 pokemon_class_boundaries = {}
+processed_charts = {"Lightest": {}, "Heaviest": {}, "Shortest": {}, "Tallest": {}}
 
 def get_game_master():
 	print("Loading game master")
@@ -800,7 +803,49 @@ def load_all_charts():
 			
 			analyse_chart(chart_json, gname, cname)
 
-def get_chart(chart_data):
+def load_charts_from_disk():
+	global processed_charts
+	path = "D:/Programming/Cyberscore/Discord bot/chart_jsons/"
+	l = listdir(path)
+	files = [f for f in l if isfile(join(path, f))]
+	print("Loading",len(files),"charts")
+	i = 0
+	for file in files:
+		i+=1
+		chart = load_chart_from_disk(join(path,file))
+		chart_name = chart['chart_name']
+		template_name = get_template_name(format_name(chart_name[8:]))
+		chart_group = chart['group_name']
+		#match group
+		if "Lightest" in chart_group:
+			processed_charts["Lightest"][template_name] = chart
+		elif "Heaviest" in chart_group:
+			processed_charts["Heaviest"][template_name] = chart
+		elif "Shortest" in chart_group:
+			processed_charts["Shortest"][template_name] = chart
+		elif "Tallest" in chart_group:
+			processed_charts["Tallest"][template_name] = chart
+		if i%1000 == 0:
+			print("Loaded",i,"charts")
+	print("Loaded all charts")
+
+def load_chart_from_disk(path):
+	f = open(path, "r")
+	chart_json = json.load(f)
+	return chart_json
+
+def get_user_score(scoreboard, user):
+	score = None
+	for sub in scoreboard:
+		if sub['username'] == username:
+			score = sub
+			break
+	return score
+
+def get_chart(type, name):
+	name = get_template_name(format_name(name))
+	return processed_charts[type][name]
+
 def download_chart(chart_data):
 	page = requests.get(chart_data['chart_url']['json'])
 	chart = json.loads(page.content)
