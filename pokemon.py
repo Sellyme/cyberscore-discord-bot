@@ -841,6 +841,39 @@ def get_leader(type, name):
 	suffix_type = "kg" if (type == "Heaviest" or type == "Lightest") else "m"
 	print(score['username'], "is the leader on", cname, "with a score of", score['submission'], suffix_type)
 
+
+def get_xxl_count(username, username_list = False):
+	xxl_count = 0
+	chart_count = len(processed_charts['Tallest'])
+	for cname in processed_charts['Tallest']:
+
+		chart = processed_charts["Tallest"][cname]
+
+		template = get_template(cname)
+		score_to_beat = template['sizeclasses'][4]
+		
+		#manual handling for edge cases
+		if "PUMPKABOO" in cname:
+			if "PUMPKABOO_SUPER" not in cname:
+				#for SUPER we can just use the existing XXL bound
+				#but for everything else we have to skip, as no XXL exists
+				chart_count -= 1
+				continue
+
+		scoreboard = chart['scoreboard']
+		score = get_user_score(scoreboard, username)
+		if not score:
+			continue
+
+		if score['submission'] >= template['sizeclasses'][4]:
+			xxl_count += 1
+		#	print(username, "has an XXL score for", cname)
+		#else:
+		#	print(username, "does not have an XXL score for", cname)
+
+	comp_pct = 100/chart_count*xxl_count
+	print("Completion rate:", str(xxl_count)+"/"+str(chart_count), "("+"{:.2f}".format(comp_pct)+"%)")
+
 def get_user_score(scoreboard, user):
 	score = None
 	for sub in scoreboard:
