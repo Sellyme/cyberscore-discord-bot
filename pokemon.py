@@ -841,13 +841,11 @@ def get_leader(type, name):
 	suffix_type = "kg" if (type == "Heaviest" or type == "Lightest") else "m"
 	print(score['username'], "is the leader on", cname, "with a score of", score['submission'], suffix_type)
 
-
-def get_xxl_count(username, username_list = False):
-	xxl_count = 0
+def get_xxl_leaderboard(mode = "print"):
+	r = {}
 	chart_count = len(processed_charts['Tallest'])
 	for cname in processed_charts['Tallest']:
-
-		chart = processed_charts["Tallest"][cname]
+		chart = processed_charts['Tallest'][cname]
 
 		template = get_template(cname)
 		score_to_beat = template['sizeclasses'][4]
@@ -859,18 +857,40 @@ def get_xxl_count(username, username_list = False):
 				#but for everything else we have to skip, as no XXL exists
 				chart_count -= 1
 				continue
-
+		
 		scoreboard = chart['scoreboard']
-		score = get_user_score(scoreboard, username)
-		if not score:
-			continue
+		for sub in scoreboard:
+			if sub['username'] not in r: #init any users seen for the first time
+				r[sub['username']] = 0
+			if sub['submission'] >= template['sizeclasses'][4]:
+				r[sub['username']] += 1
 
-		if score['submission'] >= template['sizeclasses'][4]:
-			xxl_count += 1
-		#	print(username, "has an XXL score for", cname)
-		#else:
-		#	print(username, "does not have an XXL score for", cname)
+	output = ""
+	last_score = 0
+	curr_pos = 0
+	last_pos = 0
+	for user in sorted(r, key=r.get, reverse=True):
+		curr_pos += 1
+		#print position
+		output += "#"
+		if r[user] == last_score:
+			output += str(last_pos)
+		else:
+			output += str(curr_pos)
+			last_pos = curr_pos
+		#print username
+		output += " " + user
+		#print score (and update tiechecker)
+		output += " " + str(r[user]) + "\n"
+		last_score = r[user]
+	if mode == "print":
+		print(output)
+	else:
+		return [r, chart_count]
 
+def get_xxl_count(username):
+	leaderboard, chart_count = get_xxl_leaderboard("return")
+	xxl_count = leaderboard[username]
 	comp_pct = 100/chart_count*xxl_count
 	print("Completion rate:", str(xxl_count)+"/"+str(chart_count), "("+"{:.2f}".format(comp_pct)+"%)")
 
