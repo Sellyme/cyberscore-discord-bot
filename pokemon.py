@@ -841,30 +841,31 @@ def get_leader(type, name):
 	suffix_type = "kg" if (type == "Heaviest" or type == "Lightest") else "m"
 	print(score['username'], "is the leader on", cname, "with a score of", score['submission'], suffix_type)
 
-def get_xxl_leaderboard(mode = "print"):
+def get_xx_leaderboard(type, mode="print"):
 	r = {}
-	chart_count = len(processed_charts['Tallest'])
-	for cname in processed_charts['Tallest']:
-		chart = processed_charts['Tallest'][cname]
-
-		template = get_template(cname)
-		score_to_beat = template['sizeclasses'][4]
+	chart_count = len(processed_charts[type])
+	for cname in processed_charts[type]:
+		chart = processed_charts[type][cname]
 		
+		template = get_template(cname)
+
 		#manual handling for edge cases
 		if "PUMPKABOO" in cname:
-			if "PUMPKABOO_SUPER" not in cname:
-				#for SUPER we can just use the existing XXL bound
-				#but for everything else we have to skip, as no XXL exists
+			if type == "Shortest" or "PUMPKABOO_SUPER" not in cname:
+				#for Tallest SUPER we can just use the existing XXL bound
+				#but for everything else we have to skip, as no XXS or XXL exists
 				chart_count -= 1
 				continue
-		
+
 		scoreboard = chart['scoreboard']
 		for sub in scoreboard:
 			if sub['username'] not in r: #init any users seen for the first time
 				r[sub['username']] = 0
-			if sub['submission'] >= template['sizeclasses'][4]:
+			if type == "Tallest" and sub['submission'] >= template['sizeclasses'][4]:
 				r[sub['username']] += 1
-
+			elif type == "Shortest" and sub['submission'] < template['sizeclasses'][1]:
+				r[sub['username']] += 1
+	
 	output = ""
 	last_score = 0
 	curr_pos = 0
@@ -887,6 +888,12 @@ def get_xxl_leaderboard(mode = "print"):
 		print(output)
 	else:
 		return [r, chart_count]
+
+def get_xxl_leaderboard(mode = "print"):
+	return get_xx_leaderboard("Tallest", mode)
+
+def get_xxs_leaderboard(mode = "print"):
+	return get_xx_leaderboard("Shortest", mode)
 
 def get_xxl_count(username):
 	leaderboard, chart_count = get_xxl_leaderboard("return")
