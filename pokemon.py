@@ -578,7 +578,6 @@ def get_evolutions(template):
 	return evolution_templates
 
 def check_evo_chances(mon, weight, height, override_class_size=False):
-	#todo - implement override_class_size when this is unknowable from the height
 	mon = format_name(mon)
 	variates = get_variates(mon, height, weight)
 
@@ -629,7 +628,11 @@ def check_evo_chances(mon, weight, height, override_class_size=False):
 	variates[1][1] = max_class_boundaries[max_class_size]
 
 	#combine both height and weight variates into one number for final weight
-	combined_variates = [(variates[0][0] + (variates[1][0]**2 - 1)), (variates[0][1] + (variates[1][1]**2 - 1))]
+	if min_class_size == 4:
+		#guaranteed XXLs have a different weight formula
+		combined_variates = [(variates[0][0] + (variates[1][0] - 1)), (variates[0][1] + (variates[1][1] - 1))]
+	else:
+		combined_variates = [(variates[0][0] + (variates[1][0]**2 - 1)), (variates[0][1] + (variates[1][1]**2 - 1))]
 
 	evos = get_evolutions(template)
 	count = 0
