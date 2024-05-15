@@ -284,6 +284,13 @@ async def on_message(message):
 	if message.author.bot:
 		return
 
+	#if the message is a DM, don't attempt to do anything and forward the message to me
+	if isinstance(message.channel, discord.DMChannel):
+		me = await client.fetch_user(101709643822157824)
+		await me.send(f"Sellybot DM from {message.author}:\n{message.content}")
+		return
+		
+
 	#we don't want to support any message requests in the NPS server
 	if message.guild.id == config.ps_server_id:
 		return
@@ -529,7 +536,6 @@ async def compare_weight(message):
 		output = "A " + m.group(1).title() + " " + size_str + " than " + m.group(2) +" kg is not possible."
 
 	await message.channel.send(output)
-	
 
 def get_args(message):
 	args = message.content.split(" ")
