@@ -247,6 +247,7 @@ def get_class_boundaries(mon):
 def get_bounds(mon):
 	mon = format_name(mon)
 	bounds = get_class_boundaries(mon)
+	print("XXL class: %.2f" % (bounds[1][5]))
 	print("XXS Min: %.4f" % (bounds[0]*bounds[1][0]))
 	print("XXS Max: %.4f" % (bounds[0]*bounds[1][1]))
 	print("XXL Min: %.4f" % (bounds[0]*bounds[1][4]))
