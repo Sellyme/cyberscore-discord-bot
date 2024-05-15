@@ -625,8 +625,12 @@ def check_evo_chances(mon, weight, height, override_class_size=False):
 	
 	#because the height variates reroll completely on evolve, the ones of the prevo are irrelevant
 	#so we just over-write them
-	variates[1][0] = min_class_boundaries[min_class_size]
-	variates[1][1] = max_class_boundaries[max_class_size]
+	#[UPDATE] as of ~11 April 2024, height variates no longer reroll on evolved
+	#[		] and therefore we don't rewrite them here any more
+	#[		] (there's probably lots of optimisations to make to the code now this is unnecessary)
+	#variates[1][0] = min_class_boundaries[min_class_size]
+	#variates[1][1] = max_class_boundaries[max_class_size]
+	
 
 	#combine both height and weight variates into one number for final weight
 	if min_class_size == 4:
