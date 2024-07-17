@@ -643,14 +643,15 @@ def check_evo_chances(mon, weight, height, override_class_size=False):
 			evo = evos[count]
 			settings = evo['data']['pokemonSettings']
 			
+			#get the class boundaries of the evolution
+			#(this is a bit grossly inefficient)
+			new_bounds = get_class_boundaries(settings['pokemonId'])
+			
 			#evolutions may have different height class sizes than the pokemon their evolving from
 			#so even though the height variate doesn't reroll, it may *adjust*
 			#no evolution line exists with disparities for XXS,XS,Avg,XL classes, so we only need
 			#to look at this for XXLs
 			if min_class_size == 4:
-				#get the class boundaries of the evolution
-				#(this is a bit grossly inefficient)
-				new_bounds = get_class_boundaries(settings['pokemonId'])
 				#the correct way to adjust any bound is to calculate its distance from lower bound
 				#divide this by the total range of the bounds of that class size
 				#then multiply it by the total range of the bounds of the new class size
