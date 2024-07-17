@@ -737,6 +737,7 @@ def check_evo_chances(mon, weight, height, override_class_size=False):
 			count += 1
 	else:
 		print("No evos found. Possible weight multipliers are in this range:")
+		combined_variates = [(variates[0][0] + (variates[1][0]**2 - 1)), (variates[0][1] + (variates[1][1]**2 - 1))]
 		print(combined_variates)
 
 def analyse_score(score):
