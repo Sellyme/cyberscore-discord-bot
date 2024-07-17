@@ -622,7 +622,7 @@ def check_evo_chances(mon, weight, height, override_class_size=False):
 
 	if max_class_size != min_class_size:
 		clrprint("Warning: class size unknown", clr="red")
-		if max_class_size = 4:
+		if max_class_size == 4:
 			clrprint("ERROR: Evolutions of different XXL class will be incorrect", clr="red")
 	
 	#because the height variates reroll completely on evolve, the ones of the prevo are irrelevant
@@ -658,8 +658,8 @@ def check_evo_chances(mon, weight, height, override_class_size=False):
 				new_bound_range = new_bounds[1][min_class_size+1] - new_bounds[1][min_class_size]
 				#and build the new variates
 				adj_h_variates = [
-					(variates[1][0]-classes[1][min_class_size])/old_bound_range*new_bound_range,
-					(variates[1][1]-classes[1][min_class_size])/old_bound_range*new_bound_range
+					new_bounds[1][min_class_size]+(variates[1][0]-classes[1][min_class_size])/old_bound_range*new_bound_range,
+					new_bounds[1][min_class_size]+(variates[1][1]-classes[1][min_class_size])/old_bound_range*new_bound_range
 				]
 			else:
 				#if we're not adjusting the variates, just copy them over
