@@ -622,6 +622,8 @@ def check_evo_chances(mon, weight, height, override_class_size=False):
 
 	if max_class_size != min_class_size:
 		clrprint("Warning: class size unknown", clr="red")
+		if max_class_size = 4:
+			clrprint("ERROR: Evolutions of different XXL class will be incorrect", clr="red")
 	
 	#because the height variates reroll completely on evolve, the ones of the prevo are irrelevant
 	#so we just over-write them
@@ -630,14 +632,9 @@ def check_evo_chances(mon, weight, height, override_class_size=False):
 	#[		] (there's probably lots of optimisations to make to the code now this is unnecessary)
 	#variates[1][0] = min_class_boundaries[min_class_size]
 	#variates[1][1] = max_class_boundaries[max_class_size]
-	
 
 	#combine both height and weight variates into one number for final weight
-	if min_class_size == 4:
-		#guaranteed XXLs have a different weight formula
-		combined_variates = [(variates[0][0] + (variates[1][0] - 1)), (variates[0][1] + (variates[1][1] - 1))]
-	else:
-		combined_variates = [(variates[0][0] + (variates[1][0]**2 - 1)), (variates[0][1] + (variates[1][1]**2 - 1))]
+
 
 	evos = get_evolutions(template)
 	count = 0
@@ -646,13 +643,49 @@ def check_evo_chances(mon, weight, height, override_class_size=False):
 			evo = evos[count]
 			settings = evo['data']['pokemonSettings']
 			
+			#evolutions may have different height class sizes than the pokemon their evolving from
+			#so even though the height variate doesn't reroll, it may *adjust*
+			#no evolution line exists with disparities for XXS,XS,Avg,XL classes, so we only need
+			#to look at this for XXLs
+			if min_class_size == 4:
+				#get the class boundaries of the evolution
+				#(this is a bit grossly inefficient)
+				new_bounds = get_class_boundaries(settings['pokemonId'])
+				#the correct way to adjust any bound is to calculate its distance from lower bound
+				#divide this by the total range of the bounds of that class size
+				#then multiply it by the total range of the bounds of the new class size
+				old_bound_range = classes[1][min_class_size+1] - classes[1][min_class_size]
+				new_bound_range = new_bounds[1][min_class_size+1] - new_bounds[1][min_class_size]
+				#and build the new variates
+				adj_h_variates = [
+					(variates[1][0]-classes[1][min_class_size])/old_bound_range*new_bound_range,
+					(variates[1][1]-classes[1][min_class_size])/old_bound_range*new_bound_range
+				]
+			else:
+				#if we're not adjusting the variates, just copy them over
+				adj_h_variates = [variates[1][0], variates[1][1]]
+
+			if override_class_size:
+				#we have two values: the class boundary, and the +- 0.005m value from the storage
+				#the true value must remain within both of these values
+				#so for the lower bound, we take the max(), and for the higher bound, the min()
+				adj_h_variates[0] = max(new_bounds[1][:5][min_class_size], adj_h_variates[0])
+				adj_h_variates[1] = min(new_bounds[1][1:][max_class_size], adj_h_variates[1])
+			
+			#calculate combined variates now that we've (potentially) adjusted the height variates
+			if min_class_size == 4:
+				#guaranteed XXLs have a different weight formula
+				combined_variates = [(variates[0][0] + (adj_h_variates[0] - 1)), (variates[0][1] + (adj_h_variates[1] - 1))]
+			else:
+				combined_variates = [(variates[0][0] + (adj_h_variates[0]**2 - 1)), (variates[0][1] + (adj_h_variates[1]**2 - 1))]
+			
 			#for mons with split genders (e.g., Pyroar) this DOES print both
 			#but doesn't indicate which is which. Should probably fix at some point
 			print("Calculating sizes for",settings['pokemonId'])
 			
 			#calculate min/max heights
-			min_height = settings['pokedexHeightM'] * variates[1][0]
-			max_height = settings['pokedexHeightM'] * variates[1][1]
+			min_height = settings['pokedexHeightM'] * adj_h_variates[0]
+			max_height = settings['pokedexHeightM'] * adj_h_variates[1]
 			#now for the weights
 			min_weight = settings['pokedexWeightKg'] * combined_variates[0]
 			max_weight = settings['pokedexWeightKg'] * combined_variates[1]
@@ -664,8 +697,8 @@ def check_evo_chances(mon, weight, height, override_class_size=False):
 			if 'scores' in template:
 				#need to check both in case an evo exists that doesn't have a chart
 				if 'scores' in evo:
-					print_small = variates[1][0] < 1
-					print_large = variates[1][1] > 1
+					print_small = adj_h_variates[0] < 1
+					print_large = adj_h_variates[1] > 1
 					short = evo['scores']['Pokédex Shortest']
 					tall = evo['scores']['Pokédex Tallest']
 					light = evo['scores']['Pokédex Lightest']
