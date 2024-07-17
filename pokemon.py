@@ -574,7 +574,8 @@ def get_evolutions(template):
 		else:
 			evo_name = branch['evolution']
 		evo_template = get_template(evo_name)
-		evolution_templates.append(evo_template)
+		evo_obj = {'name': evo_name, 'template': evo_template}
+		evolution_templates.append(evo_obj)
 	
 	return evolution_templates
 
@@ -640,12 +641,12 @@ def check_evo_chances(mon, weight, height, override_class_size=False):
 	count = 0
 	if len(evos) > 0:
 		while count < len(evos):
-			evo = evos[count]
+			evo = evos[count]['template']
 			settings = evo['data']['pokemonSettings']
 			
 			#get the class boundaries of the evolution
 			#(this is a bit grossly inefficient)
-			new_bounds = get_class_boundaries(settings['pokemonId'])
+			new_bounds = get_class_boundaries(evos[count]['name'])
 			
 			#evolutions may have different height class sizes than the pokemon their evolving from
 			#so even though the height variate doesn't reroll, it may *adjust*
