@@ -493,9 +493,9 @@ def scrape_top_submitters(days, idx, type): #type = "user" or "game"
 	soup = BeautifulSoup(page.content, "html.parser")
 
 	if type == "user":
-		entries = list(soup.find(id="pageright").find("table").find_all("tr"))
+		entries = list(soup.find_all(class_="layout--sidebar-primary")[0].find("table").find_all("tr"))
 	elif type == "game":
-		entries = list(soup.find(id="pageleft").find("table").find_all("tr"))
+		entries = list(soup.find_all(class_="layout--content-primary")[0].find("table").find_all("tr"))
 		#games have a header row while players don't, so pop that
 		entries.pop(0)
 
