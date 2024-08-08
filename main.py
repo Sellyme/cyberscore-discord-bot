@@ -139,10 +139,10 @@ async def scrape_leaderboards():
 #async def scrape_level_changes():
 #	channel = config.
 
-async def scrape_leaderboard(type, force = False, idx = 0, channel_id = config.leaderboard_channel, sortParam = 0):
+async def scrape_leaderboard(type, force = False, idx = 0, channel_id = config.leaderboard_channel, sortParam = 0, ytd = False):
 	channel = client.get_channel(channel_id)
 
-	results = scrape.scrape_leaderboard(type, force, idx, sortParam)
+	results = scrape.scrape_leaderboard(type, force, idx, sortParam, ytd)
 	#result should be a pure string
 	print(results)
 	#add some more user-friendly names for the embed titles where needed
@@ -342,6 +342,7 @@ async def handle_generic_leaderboard(message, type):
 	print("Handling message: '" + message.content + "'")
 	idx = 0 #default parameter
 	sortParam = 0 #default parameter (plats for medal table, points for trophy table)
+	ytd = False
 	args = get_args(message)
 
 	if len(args) > 1:
@@ -353,7 +354,9 @@ async def handle_generic_leaderboard(message, type):
 				if idx > 90:
 					await report_error(message.channel.id, "Only the top 100 for each leaderboard are tracked.")
 					#non-fatal error, just print the bottom ten
-				break
+			elif param == "ytd":
+				#if the string "ytd" is present, toggle the ytd flag
+				ytd = True
 		
 		#handle medal sort order params
 		if type == "Medal":
@@ -378,7 +381,7 @@ async def handle_generic_leaderboard(message, type):
 				sortParam = 6
 
 	print("Scraping " + type + " leaderboard with idx " + str(idx) + " and sortParam " + str(sortParam))
-	await scrape_leaderboard(type, True, idx, message.channel.id, sortParam)
+	await scrape_leaderboard(type, True, idx, message.channel.id, sortParam, ytd)
 
 async def handle_submitters(message, type): #type is either "user" or "game"
 	days = 1 #default

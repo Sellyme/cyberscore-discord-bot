@@ -209,17 +209,18 @@ def scrape_latest():
 #sortParam is applicable only when type="Medal" or type="Trophy", and represents what we sort by
 #for medals, sortParam 0 = plat, 1 = gold, 2 = silver, 3 = bronze
 #for trophies, sortParam 0 = points, 1 = plats, and 2-6 represent gold, silver, bronze, 4th, 5th
-def scrape_leaderboard(type, force, idx, sortParam = 0):
+def scrape_leaderboard(type, force, idx, sortParam = 0, ytd = False):
 	#open previous leaderboard data
 	sortType = ""
-	if type == "Starboard":
-		URL = "https://cyberscore.me.uk/scoreboards/starboard"
-		f = open("leaderboards/starboard.csv", "r+")
-		archive = "leaderboards/archive/starboard/"
-	elif type == "Medal":
-		URL = "https://cyberscore.me.uk/scoreboards/medal"
-		f = open("leaderboards/medals.csv", "r+")
-		archive = "leaderboards/archive/medals/"
+	
+	#set up default filenames
+	site_name = type.lower()
+	file_name = type.lower()
+	
+	#handle custom sortParams, and override for any name mismatches
+	if type == "Medal":
+		site_name = "medal"
+		file_name = "medals"
 		if sortParam == 1:
 			sortType = "gold"
 		elif sortParam == 2:
@@ -227,9 +228,6 @@ def scrape_leaderboard(type, force, idx, sortParam = 0):
 		elif sortParam == 3:
 			sortType = "bronze"
 	elif type == "Trophy":
-		URL = "https://cyberscore.me.uk/scoreboards/trophy"
-		f = open("leaderboards/trophy.csv", "r+")
-		archive = "leaderboards/archive/trophy/"
 		if sortParam == 1:
 			sortType = "platinum"
 		elif sortParam == 2:
@@ -242,55 +240,32 @@ def scrape_leaderboard(type, force, idx, sortParam = 0):
 			sortType = "4th"
 		elif sortParam == 6:
 			sortType = "5th"
-	elif type == "Arcade":
-		URL = "https://cyberscore.me.uk/scoreboards/arcade"
-		f = open("leaderboards/arcade.csv", "r+")
-		archive = "leaderboards/archive/arcade/"
-	elif type == "Solution":
-		URL = "https://cyberscore.me.uk/scoreboards/solution"
-		f = open("leaderboards/solution.csv", "r+")
-		archive = "leaderboards/archive/solution/"
-	elif type == "Challenge":
-		URL = "https://cyberscore.me.uk/scoreboards/challenge"
-		f = open("leaderboards/challenge.csv", "r+")
-		archive = "leaderboards/archive/challenge/"
-	elif type == "Collectible":
-		URL = "https://cyberscore.me.uk/scoreboards/collectible"
-		f = open("leaderboards/collectible.csv", "r+")
-		archive = "leaderboards/archive/collectible/"
-	elif type == "Incremental":
-		URL = "https://cyberscore.me.uk/scoreboards/incremental"
-		f = open("leaderboards/incremental.csv", "r+")
-		archive = "leaderboards/archive/incremental/"
 	elif type == "Level":
-		URL = "https://cyberscore.me.uk/scoreboards/incremental?manual_sort=cxp"
-		f = open("leaderboards/level.csv", "r+")
-		archive = "leaderboards/archive/level/"
-	elif type == "Rainbow":
-		URL = "https://cyberscore.me.uk/scoreboards/rainbow"
-		f = open("leaderboards/rainbow.csv", "r+")
-		archive = "leaderboards/archive/rainbow/"
-	elif type == "Proof":
-		URL = "https://cyberscore.me.uk/scoreboards/proof"
-		f = open("leaderboards/proof.csv", "r+")
-		archive = "leaderboards/archive/proof/"
+		sortType = "cxp"
 	elif type == "Video":
-		URL = "https://cyberscore.me.uk/scoreboards/vproof"
-		f = open("leaderboards/vproof.csv", "r+")
-		archive = "leaderboards/archive/vproof/"
-	elif type == "Submissions":
-		URL = "https://cyberscore.me.uk/scoreboards/submissions"
-		f = open("leaderboards/submissions.csv", "r+")
-		archive = "leaderboards/archive/submissions/"
-	elif type == "Speedrun":
-		URL = "https://cyberscore.me.uk/scoreboards/speedrun"
-		f = open("leaderboards/speedrun.csv", "r+")
-		archive = "leaderboards/archive/speedrun/"
-
+		site_name = "vproof"
+		file_name = "vproof"
+	
+	#and build the URLs and archive location
+	URL = "https://cyberscore.me.uk/scoreboards/" + site_name
 	if sortParam:
 		URL += "?manual_sort=" + sortType
+	archive = "leaderboards/archive/" + file_name + "/"
+	f = open("leaderboards/" + file_name + ".csv", "r+")
 
-	previous_update = load_leaderboard(f)
+	#if the ytd flag is set, load the *final* update from the previous calendar year
+	#otherwise, load the most recently saved file
+	if ytd:
+		#get current year and subtract one
+		req_year = int(datetime.now().strftime('%Y')) - 1
+		#build a list of all files from the requested year
+		req_file = cmfn.get_file_by_year(req_year, archive)
+		if not req_file:
+			return False
+		last_year = open(archive+req_file, "r+")
+		previous_update = load_leaderboard(last_year)
+	else:
+		previous_update = load_leaderboard(f)
 
 	#perform web scrape
 	page = requests.get(URL, timeout=config.timeout)
@@ -389,6 +364,7 @@ def scrape_leaderboard(type, force, idx, sortParam = 0):
 
 		#check position changes using the read file data
 		#we don't store positions for medal table non-default sorts, so exclude that
+		#TODO - we actually do store those positions now! add this functionality
 		if user_name in previous_update and not sortParam:
 			user_data = previous_update[user_name]
 			pos_change = user_data['pos'] - (i+1)
