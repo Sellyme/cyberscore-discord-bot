@@ -63,7 +63,7 @@ def scrape_latest():
 		type_col = columns[7]
 		award_col = columns[8]
 
-		country = flag_col.img.get('alt').lower()
+		country = flag_col.img.get('src').replace("/flags/","").replace(".png","").lower()
 		flag_emoji = cmfn.get_flag_emoji(country)
 		
 		user_name = name_col.a.get_text().strip()
