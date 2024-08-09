@@ -241,6 +241,7 @@ def scrape_leaderboard(type, force, idx, sortParam = 0, ytd = False):
 		elif sortParam == 6:
 			sortType = "5th"
 	elif type == "Level":
+		site_name = "incremental"
 		sortType = "cxp"
 	elif type == "Video":
 		site_name = "vproof"
@@ -248,7 +249,7 @@ def scrape_leaderboard(type, force, idx, sortParam = 0, ytd = False):
 	
 	#and build the URLs and archive location
 	URL = "https://cyberscore.me.uk/scoreboards/" + site_name
-	if sortParam:
+	if sortType:
 		URL += "?manual_sort=" + sortType
 	archive = "leaderboards/archive/" + file_name + "/"
 	f = open("leaderboards/" + file_name + ".csv", "r+")
