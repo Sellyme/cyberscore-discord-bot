@@ -49,7 +49,7 @@ def get_file_by_year(year, dir):
 	
 	#sort all the files and take the last alphabetically (which will be the closest to the end of year)
 	req_file = sorted(files, reverse=True)[0]
-	print("DEBUG: pulling file ", req_file)
+	#print("DEBUG: pulling file ", req_file)
 	return req_file
 
 def get_scoreboard_names(type, sortParam = 0):
