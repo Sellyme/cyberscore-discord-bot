@@ -538,7 +538,9 @@ def scrape_profile(username):
 	
 
 #file is an actual file hook, *not* a path
-def load_leaderboard(file):
+def load_leaderboard(file, idx_by_pos = False):
+	#if idx_by_pos is set, each element in the dictionary is indexed by the leaderboard position
+	#otherwise, they're indexed by username
 	data = {}
 
 	line = file.readline()
@@ -550,7 +552,10 @@ def load_leaderboard(file):
 			score = cmfn.time_to_seconds(player[2])
 		else:
 			score = float(player[2]) #only a float for some boards
-		data[name] = {"pos": pos, "score": score}
+		if idx_by_pos:
+			data[pos] = {"name": name, "score": score}
+		else:
+			data[name] = {"pos": pos, "score": score}
 		line = file.readline()
 	
 	return data
@@ -561,3 +566,15 @@ def save_leaderboard(save_data, file):
 	file.write(save_data)
 	file.truncate()
 	return
+
+def generate_lead_progression(): #WIP
+	p = "D:/Programming/Cyberscore/Discord bot/leaderboards/archive/starboard/" #todo - support other boards
+	files = []
+	leads = []
+	for filename in os.listdir(p):
+		f = open(p+filename), "r+")
+		data = load_leaderboard(f)
+		diff = data[1]['score'] - data[2]['score']
+		#below line won't work on boards with custom sort params
+		leads.append({"dt": filename.replace(".csv",""), "diff": diff)
+	return leads
