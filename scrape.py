@@ -218,7 +218,6 @@ def scrape_leaderboard(type, force, idx, sortParam = 0, ytd = False, gain = Fals
 	if sortType:
 		URL += "?manual_sort=" + sortType
 	archive = "leaderboards/archive/" + file_name + "/"
-	f = open("leaderboards/" + file_name + ".csv", "r+")
 
 	previous_update = get_leaderboard_from_disk(archive, ytd)
 
@@ -411,8 +410,9 @@ def scrape_leaderboard(type, force, idx, sortParam = 0, ytd = False, gain = Fals
 	#so we have a ~midnight UTC point of comparison for the score diffs each day
 	#we also avoid saving if we did a medal table scrape with a non-default sort
 	if(not force and not sortParam): #adjust this to force-overwrite
+		f = open("leaderboards/" + file_name + ".csv", "r+")
 		save_leaderboard(save_data, f)
-	f.close()
+		f.close()
 
 	return output
 
