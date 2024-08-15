@@ -209,43 +209,9 @@ def scrape_latest():
 #sortParam is applicable only when type="Medal" or type="Trophy", and represents what we sort by
 #for medals, sortParam 0 = plat, 1 = gold, 2 = silver, 3 = bronze
 #for trophies, sortParam 0 = points, 1 = plats, and 2-6 represent gold, silver, bronze, 4th, 5th
-def scrape_leaderboard(type, force, idx, sortParam = 0, ytd = False):
-	#open previous leaderboard data
-	sortType = ""
-	
-	#set up default filenames
-	site_name = type.lower()
-	file_name = type.lower()
-	
-	#handle custom sortParams, and override for any name mismatches
-	if type == "Medal":
-		site_name = "medal"
-		file_name = "medals"
-		if sortParam == 1:
-			sortType = "gold"
-		elif sortParam == 2:
-			sortType = "silver"
-		elif sortParam == 3:
-			sortType = "bronze"
-	elif type == "Trophy":
-		if sortParam == 1:
-			sortType = "platinum"
-		elif sortParam == 2:
-			sortType = "gold"
-		elif sortParam == 3:
-			sortType = "silver"
-		elif sortParam == 4:
-			sortType = "bronze"
-		elif sortParam == 5:
-			sortType = "4th"
-		elif sortParam == 6:
-			sortType = "5th"
-	elif type == "Level":
-		site_name = "incremental"
-		sortType = "cxp"
-	elif type == "Video":
-		site_name = "vproof"
-		file_name = "vproof"
+def scrape_leaderboard(type, force, idx, sortParam = 0, ytd = False, gain = False):
+	#get all the URL/filestructure names needed
+	site_name, file_name, sortType = get_scoreboard_names(type, sortParam)
 	
 	#and build the URLs and archive location
 	URL = "https://cyberscore.me.uk/scoreboards/" + site_name
@@ -254,19 +220,7 @@ def scrape_leaderboard(type, force, idx, sortParam = 0, ytd = False):
 	archive = "leaderboards/archive/" + file_name + "/"
 	f = open("leaderboards/" + file_name + ".csv", "r+")
 
-	#if the ytd flag is set, load the *final* update from the previous calendar year
-	#otherwise, load the most recently saved file
-	if ytd:
-		#get current year and subtract one
-		req_year = int(datetime.now().strftime('%Y')) - 1
-		#build a list of all files from the requested year
-		req_file = cmfn.get_file_by_year(req_year, archive)
-		if not req_file:
-			return False
-		last_year = open(archive+req_file, "r+")
-		previous_update = load_leaderboard(last_year)
-	else:
-		previous_update = load_leaderboard(f)
+	previous_update = get_leaderboard_from_disk(archive, ytd)
 
 	#perform web scrape
 	page = requests.get(URL, timeout=config.timeout)

@@ -1,4 +1,4 @@
-import math, os
+import math, os, datetime
 
 def time_to_seconds(time_str):
     h, m, s = time_str.split(':')
@@ -51,3 +51,74 @@ def get_file_by_year(year, dir):
 	req_file = sorted(files, reverse=True)[0]
 	print("DEBUG: pulling file ", req_file)
 	return req_file
+
+def get_scoreboard_names(type, sortParam = 0):
+	#takes in a consistent human-readable name of a specific scoreboard, and an optional sort poram
+	#returns an array containing the name used as the site's URL for that board,
+	#the name used for the filesystem where archives are stored, and the sort parameter name
+	
+	#set defaults
+	site_name = type.lower()
+	file_name = type.lower()
+	sortType = ""
+	
+	#handle custom sortParams, and override for any name mismatches
+	if type == "Medal":
+		site_name = "medal"
+		file_name = "medals"
+		if sortParam == 1:
+			sortType = "gold"
+		elif sortParam == 2:
+			sortType = "silver"
+		elif sortParam == 3:
+			sortType = "bronze"
+	elif type == "Trophy":
+		if sortParam == 1:
+			sortType = "platinum"
+		elif sortParam == 2:
+			sortType = "gold"
+		elif sortParam == 3:
+			sortType = "silver"
+		elif sortParam == 4:
+			sortType = "bronze"
+		elif sortParam == 5:
+			sortType = "4th"
+		elif sortParam == 6:
+			sortType = "5th"
+	elif type == "Level":
+		site_name = "incremental"
+		sortType = "cxp"
+	elif type == "Video":
+		site_name = "vproof"
+		file_name = "vproof"
+	
+	#and return the results
+	return [site_name, file_name, sortType]
+
+def get_leaderboard_from_disk(location, ytd = False):
+	#parses and returns a leaderboard of the specified type from a certain date
+	#date can be specified by optional parameters (many potential ones unimplemented)
+	#but is by default the most recent *daily* leaderboard update available
+	
+	
+	#if the ytd flag is set, load the *final* update from the previous calendar year
+	if ytd:
+		#get current year and subtract one
+		req_year = int(datetime.now().strftime('%Y')) - 1
+		#build a list of all files from the requested year
+		req_file = cmfn.get_file_by_year(req_year, location)
+		if not req_file:
+			return False
+		last_year = open(location+req_file, "r+")
+		result = load_leaderboard(last_year)
+	else: #otherwise, load the most recently saved file
+		result = load_leaderboard(f)
+	
+	return result
+
+def scrape_leaderboard_new(): #rename when done
+	#todo - reimplement all of the leaderboard scraping here
+	#and instead of building a string, build a rich datastructure
+	#that we can then use to output differently-sorted results
+	#(e.g., order a CSR leaderboard by gains instead of total)
+	return False
