@@ -1,4 +1,4 @@
-import math, os, datetime
+import math, os, datetime, re
 
 def time_to_seconds(time_str):
     h, m, s = time_str.split(':')
@@ -95,26 +95,50 @@ def get_scoreboard_names(type, sortParam = 0):
 	#and return the results
 	return [site_name, file_name, sortType]
 
-def get_leaderboard_from_disk(location, ytd = False):
+def get_leaderboard_from_disk(file_name, ytd = False):
 	#parses and returns a leaderboard of the specified type from a certain date
 	#date can be specified by optional parameters (many potential ones unimplemented)
 	#but is by default the most recent *daily* leaderboard update available
-	
 	
 	#if the ytd flag is set, load the *final* update from the previous calendar year
 	if ytd:
 		#get current year and subtract one
 		req_year = int(datetime.now().strftime('%Y')) - 1
 		#build a list of all files from the requested year
+		location = "leaderboards/archive/"+file_name+"/"
 		req_file = cmfn.get_file_by_year(req_year, location)
 		if not req_file:
 			return False
 		last_year = open(location+req_file, "r+")
 		result = load_leaderboard(last_year)
 	else: #otherwise, load the most recently saved file
-		result = load_leaderboard(f)
+		latest = open("leaderboards/"+file_name+".csv", "r+")
+		result = load_leaderboard(latest)
 	
 	return result
+
+#file is an actual file hook, *not* a path
+def load_leaderboard(file, idx_by_pos = False):
+	#if idx_by_pos is set, each element in the dictionary is indexed by the leaderboard position
+	#otherwise, they're indexed by username
+	data = {}
+
+	line = file.readline()
+	while line:
+		player = line.split(",")
+		pos = int(player[0])
+		name = player[1]
+		if ":" in player[2]: #special handling for speedruns since it's bugged
+			score = cmfn.time_to_seconds(player[2])
+		else:
+			score = float(player[2]) #only a float for some boards
+		if idx_by_pos:
+			data[pos] = {"name": name, "score": score}
+		else:
+			data[name] = {"pos": pos, "score": score}
+		line = file.readline()
+	
+	return data
 
 def scrape_leaderboard_new(): #rename when done
 	#todo - reimplement all of the leaderboard scraping here
@@ -122,3 +146,8 @@ def scrape_leaderboard_new(): #rename when done
 	#that we can then use to output differently-sorted results
 	#(e.g., order a CSR leaderboard by gains instead of total)
 	return False
+
+def convert_timestamp_to_excel(timestamp):
+	#replaces the YYYY-MM-DD_HH-MM-SS.csv format leaderboard files are saved using
+	#with the YYYY-MM-DD HH:MM:SS format used for date processing in Excel
+	return re.sub(r"(\d\d\d\d-\d\d-\d\d)_(\d\d)-(\d\d)-(\d\d).*", "\g<1> \g<2>:\g<3>:\g<4>", timestamp)

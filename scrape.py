@@ -1,4 +1,4 @@
-import requests, re, math, json
+import requests, re, math, json, os
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 import pokemon
@@ -211,7 +211,7 @@ def scrape_latest():
 #for trophies, sortParam 0 = points, 1 = plats, and 2-6 represent gold, silver, bronze, 4th, 5th
 def scrape_leaderboard(type, force, idx, sortParam = 0, ytd = False, gain = False):
 	#get all the URL/filestructure names needed
-	site_name, file_name, sortType = get_scoreboard_names(type, sortParam)
+	site_name, file_name, sortType = cmfn.get_scoreboard_names(type, sortParam)
 	
 	#and build the URLs and archive location
 	URL = "https://cyberscore.me.uk/scoreboards/" + site_name
@@ -219,7 +219,7 @@ def scrape_leaderboard(type, force, idx, sortParam = 0, ytd = False, gain = Fals
 		URL += "?manual_sort=" + sortType
 	archive = "leaderboards/archive/" + file_name + "/"
 
-	previous_update = get_leaderboard_from_disk(archive, ytd)
+	previous_update = cmfn.get_leaderboard_from_disk(file_name, ytd)
 
 	#perform web scrape
 	page = requests.get(URL, timeout=config.timeout)
@@ -537,28 +537,6 @@ def scrape_profile(username):
 	return user_data
 	
 
-#file is an actual file hook, *not* a path
-def load_leaderboard(file, idx_by_pos = False):
-	#if idx_by_pos is set, each element in the dictionary is indexed by the leaderboard position
-	#otherwise, they're indexed by username
-	data = {}
-
-	line = file.readline()
-	while line:
-		player = line.split(",")
-		pos = int(player[0])
-		name = player[1]
-		if ":" in player[2]: #special handling for speedruns since it's bugged
-			score = cmfn.time_to_seconds(player[2])
-		else:
-			score = float(player[2]) #only a float for some boards
-		if idx_by_pos:
-			data[pos] = {"name": name, "score": score}
-		else:
-			data[name] = {"pos": pos, "score": score}
-		line = file.readline()
-	
-	return data
 
 #file is an actual file hook, *not* a path
 def save_leaderboard(save_data, file):
