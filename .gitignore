@@ -8,3 +8,4 @@ leaderboards/cyberscore-leaderboards*
 *.bak
 leaderboards/archive/*
 leaderboards/*.csv
+/qodana.yaml

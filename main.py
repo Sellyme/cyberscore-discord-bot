@@ -2,7 +2,7 @@ import os #reading auth file
 import sys #needed to test if we're in IDLE
 import discord #discord bot
 from dotenv import load_dotenv #discord auth
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import asyncio #allow multiple threads
 import inflect #used for converting integers to ordinal positions
 import re, math
@@ -16,7 +16,7 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 intents = discord.Intents.default()
 intents.message_content = True
 client = discord.Client(intents=intents)
-infeng = inflect.engine()
+inflect_engine = inflect.engine()
 
 firstLoad = True #check this on_ready() and then set it to false so we never duplicate the threads
 
@@ -58,7 +58,7 @@ async def scrape_latest():
 				#as otherwise the message being sent just fails and is skipped
 				await cs_channel.send(embed=embed)
 			
-			#Messages to output to Pokemon Snap Discord
+			#Messages to output to Pokémon Snap Discord
 			for msg in ps_results:
 				#create embed for Discord
 				embed = discord.Embed(description=msg)
@@ -74,7 +74,7 @@ async def scrape_latest():
 			for msg in size_results:
 				embed = discord.Embed(description=msg)
 				await cs_pokemon_channel.send(embed=embed)
-		except Exception as e:
+		except Exception:
 			traceback.print_exc()
 			print("Exception occurred in latest subs scrape")
 		finally:
@@ -86,12 +86,13 @@ async def scrape_leaderboards():
 			f = open("last_leaderboards", "r+")
 			last_scrape = f.read()
 			last_scrape_dt = datetime.strptime(last_scrape, "%Y-%m-%d %H:%M:%S")
+			last_scrape_dt = last_scrape_dt.replace(tzinfo=timezone.utc) #force a timezone-aware datetime
 			lock_scrape = last_scrape_dt + timedelta(0.1)
 			next_scrape = last_scrape_dt + timedelta(1)
 		
 			print("Checking leaderboard scrape")
 			#we want the leaderboard scrape to only run around midnight UTC, so init a datetime
-			now = datetime.utcnow()
+			now = datetime.now(timezone.utc)
 			#and then check that it's 12:xx am (or if we've missed a cycle somehow)
 			if (now.hour == 0 and lock_scrape < now) or next_scrape < now:
 				print("Running leaderboard scrape")
@@ -110,7 +111,9 @@ async def scrape_leaderboards():
 				proof_change = await scrape_leaderboard("Proof")
 				video_change = await scrape_leaderboard("Video")
 				
-				top10_change = starboard_change or medal_change or trophy_change or rainbow_change or arcade_change or solution_change or challenge_change or collection_change or proof_change or video_change or speedrun_change
+				top10_change = starboard_change or medal_change or trophy_change or rainbow_change or arcade_change \
+							   or solution_change or challenge_change or collection_change or proof_change \
+							   or video_change or speedrun_change or incremental_change
 
 				#and then also run the remaining leaderboards
 				await scrape_leaderboard("Level")
@@ -139,85 +142,98 @@ async def scrape_leaderboards():
 #async def scrape_level_changes():
 #	channel = config.
 
-async def scrape_leaderboard(type, force = False, idx = 0, channel_id = config.leaderboard_channel, sortParam = 0, ytd = False):
+async def scrape_leaderboard(board_type, force = False, idx = 0, channel_id = config.leaderboard_channel, sort_param = 0, ytd = False, gain = False):
+	#PARAMS:
+	#board_type - the leaderboard size_type to scrape, e.g., "arcade"
+	#force - whether to force an update to #leaderboards, used only for manually fixing errors
+	#idx - the position at which to start displaying the board, to view further down than top 10
+	#channel_id - if called by a user command, the channel in which that command was sent
+	#sort_param - for boards with multiple sorts (e.g., Medal Table), what sort order is desired
+	#ytd - if true, show gains over the current calendar year, instead of the current calendar day. TODO - extend this to accept integer numbers of days in addition to the simple keyword
+	#gain - if true, order the results by gains in the relevant period rather than ordering by current totals
+
 	channel = client.get_channel(channel_id)
 
-	results = scrape.scrape_leaderboard(type, force, idx, sortParam, ytd)
+	results = scrape.scrape_leaderboard(board_type, force, idx, sort_param, ytd, gain)
 	#result should be a pure string
 	print(results)
 	#add some more user-friendly names for the embed titles where needed
-	if type == "Video":
+	if board_type == "Video":
 		name = "Video Proof"
-	elif type == "Challenge":
+	elif board_type == "Challenge":
 		name = "User Challenge"
-	elif type == "Medal":
+	elif board_type == "Medal":
 		name = "Medal Table"
-		if sortParam == 0:
+		if sort_param == 0:
 			name += " <:plat:930611250809958501>"
-		elif sortParam == 1:
+		elif sort_param == 1:
 			name += " <:gold:930611304727740487>"
-		elif sortParam == 2:
+		elif sort_param == 2:
 			name += " <:silver:930611349267054702>"
-		elif sortParam == 3:
+		elif sort_param == 3:
 			name += " <:bronze:930611393198190652>"
-	elif type == "Trophy":
+	elif board_type == "Trophy":
 		name = "Trophy Table"
-		if sortParam == 0:
+		if sort_param == 0:
 			name += " (Points)"
-		elif sortParam == 1:
+		elif sort_param == 1:
 			name += " (Platinum)"
-		elif sortParam == 2:
+		elif sort_param == 2:
 			name += " (Gold)"
-		elif sortParam == 3:
+		elif sort_param == 3:
 			name += " (Silver)"
-		elif sortParam == 4:
+		elif sort_param == 4:
 			name += " (Bronze)"
-		elif sortParam == 5:
+		elif sort_param == 5:
 			name += " (4ths)"
-		elif sortParam == 6:
+		elif sort_param == 6:
 			name += " (5ths)"
 	else:
-		name = type
+		name = board_type
 
 	#level leaderboard is effectively printed in the VXP leaderboard
 	#and submissions leaderboard changes are shown in daily top subs
 	#so we don't print those two leaderboards by default.
-	if (type != "Level" and type != "Submissions") or force:
+	if (board_type != "Level" and board_type != "Submissions") or force:
 		#create embed for Discord
 		embed = discord.Embed()
 		embed.add_field(name=name, value=results)
-		embed.timestamp = datetime.utcnow()
+		embed.timestamp = datetime.now(timezone.utc)
 		await channel.send(embed=embed)
 
-	#and indicate whether or not there was a change in the top 10
-	return ("▲" in results or "▼" in results or ":new:" in results)
+	#and indicate whether there was a change in the top 10
+	return "▲" in results or "▼" in results or ":new:" in results
 
-async def top_submitters(days = 1, idx = 0, channel_id = config.leaderboard_channel, type = "user"): #type = "user" or "game"
+async def top_submitters(days = 1, idx = 0, channel_id = config.leaderboard_channel, board_type ="user"):
+	#board_type = "user" or "game"
 	channel = client.get_channel(channel_id)
 	
-	results = scrape.scrape_top_submitters(days, idx, type) #results is an array of [embed_body, range_string]
+	results = scrape.scrape_top_submitters(days, idx, board_type) #results is an array of [embed_body, range_string]
 	embed_body = results[0]
 	print(results[0])
 
 	#generate embed header
-	if type == "user":
+	if board_type == "user":
 		noun = "submitter"
-	elif type == "game":
+	elif board_type == "game":
 		noun = "game"
+	else:
+		return await report_error(channel_id, "Board size_type " + str(board_type) + " invalid")
 
 	if days == 1:
-		fieldname = "Top " + noun + "s for today"
+		field_name = "Top " + noun + "s for today"
 	else:
-		fieldname = "Top " + noun + "s for the last " + str(days) + " days"
+		field_name = "Top " + noun + "s for the last " + str(days) + " days"
 	
-	#if there was a non-default idx set (e.g., not just looking at top 10 users) additionally print what range we're looking at
+	#if there was a non-default idx set (e.g., not just looking at top 10 users) additionally print what range
+	#we're looking at
 	if idx > 0:
-		fieldname += " ("+results[1]+")"
+		field_name += " ("+results[1]+")"
 
 	#create embed for Discord
 	embed = discord.Embed()
-	embed.add_field(name=fieldname, value=results[0])
-	embed.timestamp = datetime.utcnow()
+	embed.add_field(name=field_name, value=embed_body)
+	embed.timestamp = datetime.now(timezone.utc)
 	await channel.send(embed=embed)
 
 async def profile_stats(message):
@@ -236,7 +252,7 @@ async def profile_stats(message):
 	user_data = scrape.scrape_profile(username)
 
 	#fail if user wasn't found
-	if user_data == None:
+	if user_data is None:
 		await report_error(message.channel.id, "Can not find profile with username/user_id `"+username+"`")
 		return
 
@@ -253,29 +269,30 @@ async def profile_stats(message):
 				if board == "average":
 					field_text += "**"+board.capitalize() + "**: #" + position + "\n"
 				elif position:
-					field_text += "**"+board.capitalize() + "**: " + infeng.ordinal(position) + "\n"
+					field_text += "**" + board.capitalize() + "**: " + inflect_engine.ordinal(position) + "\n"
 				else:
 					field_text += "**"+board.capitalize() + "**: N/A\n"
 		else:
 			continue #this data is VERY unreliable right now, remove this line when API is more robust
-			for board in user_data[key]:
-				score = user_data[key][board]
-				field_text += "**"+board.capitalize() + "**: " + str(score)
-				#find the next medal up
-				max_milestone = sub_milestones[len(sub_milestones)-1]
-				for target in sub_milestones:
-					if score < target: #we've found the first milestone the user hasn't reached:
-						max_milestone = target
-						break
-					#and if we loop through every milestone and the score isn't lower than any of them
-					#we fall through to the default (which is the final milestone in the list)
-				field_text += "/" + str(max_milestone) + "\n"
+			# for board in user_data[key]:
+			# 	score = user_data[key][board]
+			# 	field_text += "**"+board.capitalize() + "**: " + str(score)
+			# 	#find the next medal up
+			# 	max_milestone = sub_milestones[len(sub_milestones)-1]
+			# 	for target in sub_milestones:
+			# 		if score < target: #we've found the first milestone the user hasn't reached:
+			# 			max_milestone = target
+			# 			break
+			# 		#and if we loop through every milestone and the score isn't lower than any of them
+			# 		#we fall through to the default (which is the final milestone in the list)
+			# 	field_text += "/" + str(max_milestone) + "\n"
+
 		embed.add_field(name=field_name, value=field_text, inline=True)
 
 	user_avatar = "https://cyberscore.me.uk/userpics/" + str(user_data["user_id"]) + ".jpg"
 	embed.set_author(name=user_data['username'], icon_url=user_avatar)
 
-	embed.timestamp = datetime.utcnow()
+	embed.timestamp = datetime.now(timezone.utc)
 	await channel.send(embed=embed)
 
 @client.event
@@ -327,7 +344,7 @@ async def on_message(message):
 		await handle_submitters(message, "game")
 	elif message.content.startswith("!debug"):
 		await debug(message)
-	elif message.content.startswith("!profile"):
+	elif message.content.startswith("!profile") or message.content.startswith("!user"):
 		await profile_stats(message)
 	elif message.content.startswith("!forms"):
 		await get_pokemon_forms(message)
@@ -337,12 +354,15 @@ async def on_message(message):
 		await compare_height(message)
 	elif message.content.startswith("!weight "):
 		await compare_weight(message)
+	elif message.content.startswith("!chartchallenge") or message.content.startswith("!cc"):
+		await handle_chart_challenge(message)
 
-async def handle_generic_leaderboard(message, type):
+async def handle_generic_leaderboard(message, board_type):
 	print("Handling message: '" + message.content + "'")
 	idx = 0 #default parameter
 	sortParam = 0 #default parameter (plats for medal table, points for trophy table)
 	ytd = False
+	gain = False
 	args = get_args(message)
 
 	if len(args) > 1:
@@ -357,16 +377,18 @@ async def handle_generic_leaderboard(message, type):
 			elif param == "ytd":
 				#if the string "ytd" is present, toggle the ytd flag
 				ytd = True
+			elif param == "gain":
+				gain = True
 		
 		#handle medal sort order params
-		if type == "Medal":
+		if board_type == "Medal":
 			if "-g" in args:
 				sortParam = 1
 			elif "-s" in args:
 				sortParam = 2
 			elif "-b" in args:
 				sortParam = 3
-		elif type == "Trophy":
+		elif board_type == "Trophy":
 			if "-p" in args:
 				sortParam = 1
 			elif "-g" in args:
@@ -380,10 +402,10 @@ async def handle_generic_leaderboard(message, type):
 			elif "-5" in args:
 				sortParam = 6
 
-	print("Scraping " + type + " leaderboard with idx " + str(idx) + " and sortParam " + str(sortParam))
-	await scrape_leaderboard(type, True, idx, message.channel.id, sortParam, ytd)
+	print("Scraping " + board_type + " leaderboard with idx " + str(idx) + " and sort_param " + str(sortParam))
+	await scrape_leaderboard(board_type, True, idx, message.channel.id, sortParam, ytd, gain)
 
-async def handle_submitters(message, type): #type is either "user" or "game"
+async def handle_submitters(message, board_type): #board_type is either "user" or "game"
 	days = 1 #default
 	idx = 0 #default
 	args = get_args(message)
@@ -405,24 +427,59 @@ async def handle_submitters(message, type): #type is either "user" or "game"
 			days = int(daysParam)
 		elif daysParam.lower() == "ytd":
 			#year-to-date stats, so get the current day of year index
-			days = int(format(datetime.utcnow(), '%j'))
+			days = int(format(datetime.now(timezone.utc), '%j'))
 		elif daysParam.lower() == "all":
-			if type == "game":
+			if board_type == "game":
 				await report_error(message.channel.id, "'All' search is not currently supported for game submissions")
 				return
 			print("Scraping Submissions leaderboard with idx " + str(idx))
 			await scrape_leaderboard("Submissions", True, idx, message.channel.id)
 			return
-		#we ostensibly support daysParam being "today", e.g., "!subs today 15" to get today's leaderboard starting at 15th
+		#we ostensibly support daysParam being "today", e.g., "!subs today 15" to get today's leaderboard starting at 15th,
 		#but we don't actually need to code anything to support this, since falling through to the default case works fine
 
 	print("Scraping top submitters for " + str(days) + " days with idx " + str(idx))
-	await top_submitters(days, idx, message.channel.id, type)
+	await top_submitters(days, idx, message.channel.id, board_type)
+
+async def handle_chart_challenge(message):
+	print("Handling message: '" + message.content + "'")
+	idx = 0 #default parameter
+	month = "now" #default parameter
+	args = get_args(message)
+	
+	if len(args) > 1:
+		for param in args:
+			if param.isnumeric():
+				#months aren't represented numerically, so this must represent the desired index
+				idx = int(param) - 1
+				#no error message on high indices because the size of the board varies monthly and rarely hits 100 anyway
+			elif param != "!cc":
+				month = param
+	
+	#the site doesn't use a leading zero for months in the URL, so we need some handling for that
+	if month == "now":
+		# the '#' character in this string strips the leading zero
+		#if porting to Unix, this needs to be replaced with a '-' like so: "%Y-%-m"
+		month = datetime.now(timezone.utc).strftime("%Y-%#m")
+	else:
+		#if a user requests a month of the form 2024-03 we can easily convert it
+		month = month.replace("-0","-")
+	
+	print("Scraping chart challenge leaderboard with idx " + str(idx) + " and month " + month)
+	results = await scrape.scrape_chart_challenge(idx, month)
+	#and post to Discord
+	channel = client.get_channel(message.channel.id)
+	embed_name = "Chart Challenge ("+month+")"
+	
+	embed = discord.Embed()
+	embed.add_field(name=embed_name, value=results)
+	embed.timestamp = datetime.now(timezone.utc)
+	await channel.send(embed=embed)
 
 async def get_pokemon_forms(message):
 	mon = message.content.removeprefix("!forms").strip()
 	if not mon:
-		report_error(message.channel.id, "Must supply a dex number or Pokemon name to search for")
+		await report_error(message.channel.id, "Must supply a dex number or Pokemon name to search for")
 		return
 
 	if mon.isnumeric():
@@ -446,11 +503,11 @@ async def get_pokemon_forms(message):
 async def get_pokemon_dex(message):
 	params = message.content.removeprefix("!dex").strip()
 	if not params or " " not in params:
-		report_error(message.channel.id, "You must supply both a dex item to look up, and a Pokémon form name to search for. Use `!forms {dex_number}` to see valid form names for a certain species.")
+		await report_error(message.channel.id, "You must supply both a dex item to look up, and a Pokémon form name to search for. Use `!forms {dex_number}` to see valid form names for a certain species.")
 		return
 	
-	if params.startswith("type"):
-		mon = pokemon.format_name(params.removeprefix("type").strip())
+	if params.startswith("size_type"):
+		mon = pokemon.format_name(params.removeprefix("size_type").strip())
 		output = pokemon.get_type(mon)
 	elif params.startswith("bcr"):
 		mon = pokemon.format_name(params.removeprefix("bcr").strip())
@@ -470,7 +527,7 @@ async def get_pokemon_dex(message):
 		height = pokemon.get_dex_height(mon)
 		output = str(height)+" m" if height else height
 	else:
-		await report_error(message.channel.id, "Cannot understand parameters given. Please enter first the dex field you are requesting and then the Pokemon name, e.g., `!dex type Pidgey`")
+		return await report_error(message.channel.id, "Cannot understand parameters given. Please enter first the dex field you are requesting and then the Pokemon name, e.g., `!dex size_type Pidgey`")
 
 	if output:
 		await message.channel.send(output)

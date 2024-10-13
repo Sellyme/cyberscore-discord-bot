@@ -1,6 +1,6 @@
-import requests, re, math, json, os
+import requests, re, math, json
 from bs4 import BeautifulSoup
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import pokemon
 import cmfn, config
 
@@ -18,25 +18,25 @@ def scrape_latest():
 	#perform web scrape
 	page = requests.get(URL, timeout=config.timeout)
 	soup = BeautifulSoup(page.content, "html.parser")
-	
+
 	#load in the last update time
 	f = open("last_update", "r+")
 	last_update = f.read()
 	new_update = "0"
-	
+
 	table = soup.find(id="latest_records_table")
 	#delete the header row
 	table.select_one("tr").decompose()
 	records = table.find_all("tr")
 	#and reverse them so we check the oldest first
 	records.reverse()
-	
+
 	#there's a bug in CS where updated scores are incorrectly displayed on latest-submissions
 	#as being in the position the old score was before the update. This only occurs
 	#for a very short time window after the score was published.
 	#To avoid this from occuring, we get the current UTC time, and then ignore any scores
 	#that were published within the last few seconds, and only record them on the next scrape
-	maximum_datetime = datetime.utcnow() - timedelta(seconds=3)
+	maximum_datetime = datetime.now(timezone.utc) - timedelta(seconds=3)
 	maximum_datetime_str = maximum_datetime.strftime("%Y-%m-%d %H:%M:%S")
 
 	#iterate over all records
@@ -65,28 +65,29 @@ def scrape_latest():
 
 		country = flag_col.img.get('src').replace("/flags/","").replace(".png","").lower()
 		flag_emoji = cmfn.get_flag_emoji(country)
-		
+
 		user_name = name_col.a.get_text().strip()
 		user_link = name_col.a['href']
 		user = "["+user_name+"]("+user_link+")"
-		
+
 		game_name = game_col.strong.get_text().strip()
 		game_link = game_col.a['href']
 		game = "["+game_name+"]("+CS_PREFIX+game_link+")"
-		
+
 		chart_links = list(chart_col.find_all('a'))
 		#group names don't exist for all charts, so we need to check chart_links length
 		#and only construct group name if > 1
-		if(len(chart_links) > 1):
+		if len(chart_links) > 1:
 			group_name = chart_links[0].get_text().strip()
 			chart_name = chart_links[1].get_text().strip()
 			chart_link = chart_col.find_all('a')[1]['href']
 			chart = "["+group_name + " → " + chart_name+"]("+CS_PREFIX+chart_link+")"
 		else:
+			group_name = None
 			chart_name = chart_links[0].get_text().strip()
 			chart_link = chart_col.a['href']
 			chart = "["+chart_name+"]("+CS_PREFIX+chart_link+")"
-		
+
 		score_value = score_col.a.get_text()
 		score_link = score_col.a['href']
 		score = "["+score_value+"]("+CS_PREFIX+score_link+")"
@@ -98,7 +99,7 @@ def scrape_latest():
 			comment = "\n*"+score_col.img['title']+"*"
 		else:
 			comment = ""
-		
+
 		if medal_col.img:
 			medal_name = medal_col.img['title']
 			if medal_name == "Platinum":
@@ -113,11 +114,11 @@ def scrape_latest():
 				medal = ""
 		else:
 			medal = ""
-		
+
 		pos = pos_col.get_text().replace(" ","").strip()
 		csr = award_col.strong
 		#csr is not displayed for UC charts, so display Challenge Points instead
-		#for unranked charts (e.g., time played incrementals) display nothing)
+		#for unranked charts (e.g., time played incrementals) display nothing
 		if csr:
 			csr = csr.get_text().strip()
 		elif award_col.span:
@@ -134,25 +135,27 @@ def scrape_latest():
 		output += ")\n"
 		output += game + " → " + chart
 		output += comment #if the comment exists it will appear italicised on a new line
-		
+
 		cs_results.append(output)
 		#if this is for New Pokemon Snap, output to that as well
 		if game_link == "/game/2785":
 			ps_results.append(output)
 		elif game_link == "/game/2006": #if it's for PoGo, check for and announce rare scores
 			skip = False
+			size_type = None
+			polarity = None
 			#set one flag indicating weight/height, and another indicating high/low
 			if "Lightest" in group_name:
-				type = 0
+				size_type = 0
 				polarity = 0
 			elif "Heaviest" in group_name:
-				type = 0
+				size_type = 0
 				polarity = 1
 			elif "Shortest" in group_name:
-				type = 1
+				size_type = 1
 				polarity = 0
 			elif "Tallest" in group_name:
-				type = 1
+				size_type = 1
 				polarity = 1
 			else:
 				#for all other groups no analysis is desired
@@ -162,7 +165,7 @@ def scrape_latest():
 			if not skip:
 				score_raw = score_value.replace(",","").split(" ")[0]
 				score_data = {
-					'type': type,
+					'size_type': size_type,
 					'polarity': polarity,
 					'user_link': user,
 					'flag_emoji': flag_emoji,
@@ -176,7 +179,7 @@ def scrape_latest():
 					'pos': pos,
 				}
 
-				if score_data['type'] is not None:
+				if score_data['size_type'] is not None:
 					size_result = pokemon.analyse_score(score_data)
 					#print("size result", size_result)
 					if size_result:
@@ -201,18 +204,18 @@ def scrape_latest():
 		now = datetime.now()
 		print(now.strftime("%H:%M:%S"), "no updates")
 	f.close()
-	
+
 	return [cs_results, ps_results, warn_results, size_results]
 
 #force indicates whether it was a forced update by a user, or a daily check
 #idx indicates the rank at which we're going to start printing to Discord
-#sortParam is applicable only when type="Medal" or type="Trophy", and represents what we sort by
-#for medals, sortParam 0 = plat, 1 = gold, 2 = silver, 3 = bronze
-#for trophies, sortParam 0 = points, 1 = plats, and 2-6 represent gold, silver, bronze, 4th, 5th
-def scrape_leaderboard(type, force, idx, sortParam = 0, ytd = False, gain = False):
+#sort_param is applicable only when size_type="Medal" or size_type="Trophy", and represents what we sort by
+#for medals, sort_param 0 = plat, 1 = gold, 2 = silver, 3 = bronze
+#for trophies, sort_param 0 = points, 1 = plats, and 2-6 represent gold, silver, bronze, 4th, 5th
+def scrape_leaderboard(board_type, force, idx, sortParam = 0, ytd = False, gain = False):
 	#get all the URL/filestructure names needed
-	site_name, file_name, sortType = cmfn.get_scoreboard_names(type, sortParam)
-	
+	site_name, file_name, sortType = cmfn.get_scoreboard_names(board_type, sortParam)
+
 	#and build the URLs and archive location
 	URL = "https://cyberscore.me.uk/scoreboards/" + site_name
 	if sortType:
@@ -226,11 +229,11 @@ def scrape_leaderboard(type, force, idx, sortParam = 0, ytd = False, gain = Fals
 	soup = BeautifulSoup(page.content, "html.parser")
 	table = soup.find(id="scoreboard_classic")
 	players = list(table.find_all("tr"))
-	
+
 	#Some boards have a header, so strip that
-	if (type == "Rainbow" or type == "Submissions" or type == "Incremental" 
-	or type == "Proof" or type == "Video" or type == "Speedrun" or type == "Level"
-	or type == "Medal" or type == "Trophy"):
+	if (board_type == "Rainbow" or board_type == "Submissions" or board_type == "Incremental"
+			or board_type == "Proof" or board_type == "Video" or board_type == "Speedrun" or board_type == "Level"
+			or board_type == "Medal" or board_type == "Trophy"):
 		players.pop(0)
 
 	#work out how many players we have to scrape
@@ -245,41 +248,37 @@ def scrape_leaderboard(type, force, idx, sortParam = 0, ytd = False, gain = Fals
 
 		user_cell = player.find(class_="name").a
 		user = user_cell.get_text()
-		#users are listed as e.g., 'John “N00bSl4y3r69” Doe', so extract only the alias
-		#note the use of "smart quotes" (“”) and not regular ones ("")
-		matches = re.findall(r'“([^”]*)”', user)
-		if(matches):
-			user_name = matches[0]
-		else: #if there's no matches use the full string
-			user_name = user
+		user_name = cmfn.clean_username(user)
 		user_link = user_cell["href"]
-		
-		#strip the text denoting the score type
+
+		inc_level = None
+
+		#strip the text denoting the score size_type
 		#note that "scoreboardCSR" is actually the correct classname for arcade/solution
-		if type == "Starboard":
+		if board_type == "Starboard":
 			score_raw = player.find(class_="scoreboardCSR").get_text().strip()
 			score = float(score_raw.removesuffix(" CSR").replace(",",""))
-		elif type == "Medal":
+		elif board_type == "Medal":
 			medals = player.find_all(class_="medals")
 			score_raw = medals[sortParam].get_text().strip()
 			score = int(score_raw.replace(",",""))
-		elif type == "Trophy":
+		elif board_type == "Trophy":
 			trophies = player.find_all(class_="medals")
 			score_raw = trophies[sortParam].get_text().strip()
 			score = int(score_raw.replace(",",""))
-		elif type == "Arcade":
+		elif board_type == "Arcade":
 			score_raw = player.find(class_="scoreboardCSR").get_text().strip()
 			score = int(score_raw.removesuffix(" Tokens").replace(",",""))
-		elif type == "Solution":
+		elif board_type == "Solution":
 			score_raw = player.find(class_="scoreboardCSR").get_text().strip()
 			score = int(score_raw.removesuffix(" Brain Power").replace(",",""))
-		elif type == "Challenge":
+		elif board_type == "Challenge":
 			score_raw = player.find(class_="scoreboardCSR").get_text().strip()
 			score = float(score_raw.removesuffix(" Style Points").replace(",",""))
-		elif type == "Collectible":
+		elif board_type == "Collectible":
 			score_raw = player.find(class_="scoreboardCSR").get_text().strip()
 			score = int(score_raw.removesuffix(" Cyberstars").replace(",",""))
-		elif type == "Incremental":
+		elif board_type == "Incremental":
 			#incremental is a bit odd as there's two important metrics
 			inc_scores = list(player.find_all(class_="scoreboardCSR"))
 			#for the incremental score we display "VXP" instead of "Versus XP"
@@ -290,25 +289,28 @@ def scrape_leaderboard(type, force, idx, sortParam = 0, ytd = False, gain = Fals
 			#level will never reach 1,000 so no comma replacement needed
 			#we also don't do any maths with it so don't need to store as int
 			inc_level = inc_level_raw.removeprefix("Level ")
-		elif type == "Level":
-			#for level we want to actually get the raw CXP and reverse-engineer the level from that
+		elif board_type == "Level":
+			#for level, we want to actually get the raw CXP and reverse-engineer the level from that
 			#this allows us to display sub-integer changes
 			cxp_raw = list(player.find_all(class_="scoreboardCSR"))[1].contents[2].get_text()
 			cxp = float(cxp_raw.strip().replace(",","").replace("(","").replace(")","").removesuffix(" CXP"))
-			score = math.log(max(10, cxp)/10, 2.5) + 1 #a user with 0xp starts at level 1
+			score = math.log(max([10, cxp])/10, 2.5) + 1 #a user with 0xp starts at level 1
 			score = round(score, 2) #round it to 2dp for display purposes
 			integer_level = math.floor(score)
 			decimal_level = round((score - integer_level) * 100)
 			score_raw = "Level " + str(integer_level) + " [" + str(decimal_level) + "%]"
-		elif type == "Rainbow":
+		elif board_type == "Rainbow":
 			score_raw = player.h2.get_text()
 			score = int(score_raw.removesuffix(" RP").replace(",",""))
-		elif type == "Submissions" or type == "Proof" or type == "Video":
+		elif board_type == "Submissions" or board_type == "Proof" or board_type == "Video":
 			score_raw = player.b.get_text()
 			score = int(score_raw.replace(",",""))
-		elif type == "Speedrun":
+		elif board_type == "Speedrun":
 			score_raw = player.find(class_="medals").get_text().strip()
 			score = cmfn.time_to_seconds(score_raw)
+		else:
+			print("ERROR: scoreboard size_type", board_type, "not valid")
+			return
 
 		#in some cases score_raw includes excess whitespace
 		#e.g., "382,193     Brain Power"
@@ -323,8 +325,8 @@ def scrape_leaderboard(type, force, idx, sortParam = 0, ytd = False, gain = Fals
 			user_data = previous_update[user_name]
 			pos_change = user_data['pos'] - (i+1)
 			score_change = score - user_data['score']
-			
-			#for alignment we're using U+2800 braille spaces - "⠀" for non-pos changes
+
+			#for alignment, we're using U+2800 braille spaces - "⠀" for non-pos changes
 			#and U+200A hair spaces - " " for pos changes
 			#this aligns better than anything else Discord will indent with
 
@@ -343,15 +345,16 @@ def scrape_leaderboard(type, force, idx, sortParam = 0, ytd = False, gain = Fals
 
 		#Starboard+Challenge+Level requires decimal formatting for output, Speedrun requires time
 		#other boards are integers
-		if type == "Starboard":
+		score_change_str = "" #default
+		if board_type == "Starboard":
 			score_str = "{:,.2f}".format(score)
 			if score_change:
 				score_change_str = " ({:+,.2f})".format(score_change)
-		elif type == "Challenge":
+		elif board_type == "Challenge":
 			score_str = "{:,.1f}".format(score)
 			if score_change:
 				score_change_str = " ({:+,.1f})".format(score_change)
-		elif type == "Speedrun":
+		elif board_type == "Speedrun":
 			score_str = cmfn.seconds_to_time(score)
 			if score_change:
 				symbol = ""
@@ -360,7 +363,7 @@ def scrape_leaderboard(type, force, idx, sortParam = 0, ytd = False, gain = Fals
 				elif score_change < 0:
 					symbol = "-"
 				score_change_str = " ("+symbol+cmfn.seconds_to_time(score_change)+")"
-		elif type == "Level":
+		elif board_type == "Level":
 			score_str = "{:,.2f}".format(score)
 			if score_change:
 				score_change_str = " ({:+,.0%})".format(score_change)
@@ -372,15 +375,11 @@ def scrape_leaderboard(type, force, idx, sortParam = 0, ytd = False, gain = Fals
 			if score_change:
 				score_change_str = " ({:+,})".format(score_change)
 
-		#if we didn't have a score change, set an empty differential string
-		if not score_change:
-			score_change_str = ""
-		
-		#the idx paramater indicates the start of the range that's displayed in Discord
+		#the idx parameter indicates the start of the range that's displayed in Discord
 		#since we need to include 10 players, the start can be no more than player_count-10
 		#so we clamp the index between 0 and that
 		idx = max(0, min(player_count-10, idx))
-		
+
 		#a total of 10 users are displayed, starting at idx
 		if i in range(idx, idx+10):
 			#todo - if the user is in the top three, use a medal instead of position
@@ -388,12 +387,12 @@ def scrape_leaderboard(type, force, idx, sortParam = 0, ytd = False, gain = Fals
 			output += "["+user_name+"]("+CS_PREFIX+user_link+") - "
 			output += score_raw+score_change_str
 			#if we're running the incremental scoreboard include level
-			if type == "Incremental":
+			if board_type == "Incremental":
 				output += " [L" + inc_level + "]"
 			output += "\n"
-		
+
 		#and add it to the leaderboard .csv
-		if type == "Speedrun":
+		if board_type == "Speedrun":
 			save_data += str(i+1) + "," + user_name + "," + str(score) + "\n"
 		else:
 			save_data += str(i+1) + "," + user_name + "," + score_str.replace(",","") + "\n"
@@ -409,26 +408,29 @@ def scrape_leaderboard(type, force, idx, sortParam = 0, ytd = False, gain = Fals
 	#and then if this was a (non-forced) daily update, also save it to the base leaderboard files
 	#so we have a ~midnight UTC point of comparison for the score diffs each day
 	#we also avoid saving if we did a medal table scrape with a non-default sort
-	if(not force and not sortParam): #adjust this to force-overwrite
+	if not force and not sortParam: #adjust this to force-overwrite
 		f = open("leaderboards/" + file_name + ".csv", "r+")
 		save_leaderboard(save_data, f)
 		f.close()
 
 	return output
 
-def scrape_top_submitters(days, idx, type): #type = "user" or "game"
+def scrape_top_submitters(days, idx, subs_type): #size_type = "user" or "game"
 	URL = "https://cyberscore.me.uk/latest_subs_stats.php?updates=no&days=" + str(days)
 
 	#perform web scrape
 	page = requests.get(URL, timeout=config.timeout)
 	soup = BeautifulSoup(page.content, "html.parser")
 
-	if type == "user":
+	if subs_type == "user":
 		entries = list(soup.find_all(class_="layout--sidebar-primary")[0].find("table").find_all("tr"))
-	elif type == "game":
+	elif subs_type == "game":
 		entries = list(soup.find_all(class_="layout--content-primary")[0].find("table").find_all("tr"))
 		#games have a header row while players don't, so pop that
 		entries.pop(0)
+	else:
+		print("ERROR: top submitters list size_type", subs_type, "not valid")
+		return
 
 	#we want to get the first 10 entries starting at idx
 	#if fewer than 10 entries exist, we also take some before idx if possible
@@ -445,13 +447,15 @@ def scrape_top_submitters(days, idx, type): #type = "user" or "game"
 
 		entry_name = cells[0].get_text().strip()
 		entry_link = cells[0].a['href']
+		entry_score = None
 		#users have score in cell 1, games have *records* there so we need to go to cell 2
-		if type == "user":
+		if subs_type == "user":
 			entry_score = cells[1].get_text().strip()
-		elif type == "game":
+		elif subs_type == "game":
 			entry_score = cells[2].get_text().strip()
 			#also for some reason users have an explicit domain but games don't, so add that if needed
 			entry_link = "https://cyberscore.me.uk" + entry_link
+
 
 		output += "["+entry_name+"]("+entry_link+")" + " - " + entry_score + " submissions\n"
 		i+=1
@@ -468,18 +472,18 @@ def scrape_profile(username):
 	URL = "https://cyberscore.me.uk/profile-api/"+username+".json"
 	page = requests.get(URL, timeout=config.timeout)
 	user = json.loads(page.content)
-	
+
 	#check that this is a valid username
-	if user['user_id'] == None:
+	if user['user_id'] is None:
 		return None
-	
+
 	#API has a pending merge request to change scoreboard_pos to rainbow_pos
 	#so we check if scoreboard_pos exists, and if not, use rainbow_pos
 	if "scoreboard_pos" in user['positions']:
 		rainbow_pos = user['positions']['scoreboard_pos']
 	else:
 		rainbow_pos = user['positions']['rainbow_pos']
-	
+
 	user_data = {
 		"username": user['username'],
 		"user_id": user['user_id'],
@@ -535,9 +539,38 @@ def scrape_profile(username):
 	}
 
 	return user_data
-	
 
+async def scrape_chart_challenge(idx, month):
+	URL = "https://cyberscore.me.uk/scoreboards/monthly-challenge?date=" + month
+	output = ""
 
+	#perform web scrape
+	page = requests.get(URL, timeout=config.timeout)
+	soup = BeautifulSoup(page.content, "html.parser")
+	table = soup.find(id="scoreboard_classic")
+	players = list(table.find_all("tr"))
+
+	#clamp the index to legal values
+	player_count = len(players)
+	idx = max(0, min(player_count-10, idx))
+
+	#a total of 10 users are displayed, starting at idx
+	for i in range(idx, idx+10):
+		#extract data from DOM
+		player = players[i]
+		user_cell = player.find(class_="name").a
+		user = user_cell.get_text()
+		user_name = cmfn.clean_username(user)
+		user_link = user_cell['href']
+		score_raw = player.find(class_="data").get_text().strip()
+
+		#build Discord output
+		output += str(i+1) + ". "
+		output += "["+user_name+"]("+CS_PREFIX+user_link+") - "
+		output += score_raw
+		output += "\n"
+
+	return output
 
 #file is an actual file hook, *not* a path
 def save_leaderboard(save_data, file):
@@ -545,52 +578,3 @@ def save_leaderboard(save_data, file):
 	file.write(save_data)
 	file.truncate()
 	return
-
-def generate_lead_progression(board): #WIP
-	p = "D:/Programming/Cyberscore/Discord bot/leaderboards/archive/"+board+"/"
-	leads = []
-	for filename in os.listdir(p):
-		f = open(p+filename, "r+")
-		data = cmfn.load_leaderboard(f)
-		diff = data[1]['score'] - data[2]['score']
-		dt = cmfn.convert_timestamp_to_excel(filename)
-		
-		#below line won't work on boards with custom sort params
-		leads.append({"dt": dt, "diff": diff})
-	return leads
-
-def generate_top_n(n, board): #WIP
-	p = "D:/Programming/Cyberscore/Discord bot/leaderboards/archive/"+board+"/"
-	lb_entries = {}
-	users = set()
-	
-	for filename in os.listdir(p):
-		f = open(p+filename, "r+")
-		data = cmfn.load_leaderboard(f,True)
-		dt = cmfn.convert_timestamp_to_excel(filename)
-		lb_entry = {}
-		for pos in range(1,n+1):
-			row = data[pos]
-			users.add(row['name'])
-			lb_entry[row['name']] = row['score']
-		lb_entries[dt] = lb_entry
-	
-	output = ""
-	
-	#print header row
-	output += "Timestamp"
-	for user in users:
-		output += "\t"+user
-	output += "\n"
-	#and print data
-	for update in lb_entries:
-		output += update
-		entry = lb_entries[update]
-		for user in users:
-			if user not in entry:
-				output += "\t"
-			else:
-				output += "\t"+str(entry[user])
-		output += "\n"
-	
-	return output

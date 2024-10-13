@@ -1,9 +1,14 @@
-import requests, re, json, csv, math
-import cmfn, config
-from pokemon_cdfs.xxl_classes_dict import xxl_sizes #dictionary mapping pokemon_templates keys to XXL-1, XXL-2, or XXL-3
-from clrprint import clrprint
+import csv
+import json
+import math
+import re
 from os import listdir
 from os.path import isfile, join
+
+import requests
+from clrprint import clrprint
+
+import config
 
 pokemon_templates = {}
 pokemon_forms_by_id = {}
@@ -19,14 +24,14 @@ def get_game_master():
 
 	for template in gm:
 		template_name = template['templateId']
-		
+
 		#build form database
 		template_regex = r'FORMS_V(\d\d\d\d)_POKEMON_(.*)'
 		m = re.fullmatch(template_regex, template_name)
 		if m:
 			pokemon_id = m.group(1)
 			pokemon_name = m.group(2)
-			
+
 			#Nidoran needs special handling, as two Pokemon have that name
 			if pokemon_name == "NIDORAN":
 				if pokemon_id == "0029":
@@ -50,10 +55,10 @@ def get_game_master():
 						form_list.append(form['form'])
 			else:
 				form_list.append(formSettings['pokemon'])
-			
+
 			pokemon_forms_by_id[pokemon_id] = form_list
 			pokemon_forms_by_name[pokemon_name] = form_list
-		
+
 		#hardcode in Nidoran (and any other common mistakes?) for !forms handling
 		pokemon_forms_by_name["NIDORAN"] = ["NIDORAN_F", "NIDORAN_M"]
 		pokemon_forms_by_id["0029"] = ["NIDORAN_F"]
@@ -62,7 +67,7 @@ def get_game_master():
 		pokemon_forms_by_id["0201"] = ["UNOWN"]
 		pokemon_forms_by_name["SPINDA"] = ["SPINDA"]
 		pokemon_forms_by_id["0327"] = ["SPINDA"]
-		
+
 		#build template list
 		template_regex = r'^V(\d\d\d\d)_POKEMON_(.*)'
 		m = re.fullmatch(template_regex, template_name)
@@ -121,11 +126,11 @@ def get_game_master():
 					#note that we do need to periodically manually check for errors like Beartic
 					#where both templates exist but only the latter has size data
 					continue
-				#else:
-					#loads of stuff in here is costume forms or things like Giratina
-					#where there's "GIRATINA" but all actual mons are "GIRATINA_ORIGIN" or "GIRATINA_ALTERED"
-					#may be worth enabling the debug and sanity-checking it periodically though
-					#print("Error: Found size data for Pokemon",pokemon_name,"but could not match it to a template")
+		#else:
+		#loads of stuff in here is costume forms or things like Giratina
+		#where there's "GIRATINA" but all actual mons are "GIRATINA_ORIGIN" or "GIRATINA_ALTERED"
+		#may be worth enabling the debug and sanity-checking it periodically though
+		#print("Error: Found size data for Pokemon",pokemon_name,"but could not match it to a template")
 
 	#print(pokemon_forms_by_name)
 	print("Game master loaded")
@@ -136,12 +141,12 @@ def convert_gm_sizes(obPokemonSizeSettings):
 		classes.append(obPokemonSizeSettings[item])
 	return classes
 
-def get_forms(mon, type): #type is either "name" or "number"
+def get_forms(mon, search_type): #search_type is either "name" or "number"
 	if mon == "0029" or mon == "0032" or mon.startswith("NIDORAN"):
 		return pokemon_forms_by_name["NIDORAN"]
-	elif type == "number" and mon in pokemon_forms_by_id:
+	elif search_type == "number" and mon in pokemon_forms_by_id:
 		return pokemon_forms_by_id[mon]
-	elif type == "name" and mon in pokemon_forms_by_name:
+	elif search_type == "name" and mon in pokemon_forms_by_name:
 		return pokemon_forms_by_name[mon]
 
 	return False #if no match was found
@@ -149,8 +154,8 @@ def get_forms(mon, type): #type is either "name" or "number"
 #POKEMON STATISTIC GETTERS, ORDERED BY POSITION IN GAME MASTER
 def get_type(mon):
 	template = get_template(mon)
-	type = template['data']['pokemonSettings']['type'].removeprefix("POKEMON_TYPE_")
-	output = type.title()
+	pokemon_type = template['data']['pokemonSettings']['type'].removeprefix("POKEMON_TYPE_")
+	output = pokemon_type.title()
 
 	if "type2" in template['data']['pokemonSettings']:
 		type2 = template['data']['pokemonSettings']['type2'].removeprefix("POKEMON_TYPE_")
@@ -175,19 +180,19 @@ def get_stats(mon):
 def get_moves(mon):
 	template = get_template(mon)
 	f_moves = template['data']['pokemonSettings']['quickMoves']
-	#for lists we want the first line to be a header so that it looks pretty in compact mode
+	#for lists, we want the first line to be a header so that it looks pretty in compact mode
 	output = "Moves for Pokemon '"+mon+"'\n"
 	output += "FAST\n"
 	for move in f_moves:
 		#turn "FURY_CUTTER_FAST" into "Fury Cutter"
 		output += move.removesuffix("_FAST").replace("_"," ").title()+"\n"
-	
+
 	#separate fast and charge blocks
 	output += "\nCHARGE\n"
 	c_moves = template['data']['pokemonSettings']['cinematicMoves']
 	for move in c_moves:
 		output += move.replace("_"," ").title()+"\n"
-	
+
 	return output
 
 def get_dex_weight(mon):
@@ -214,7 +219,7 @@ def rounded_variate(height, dex_height):
 	return round(height/dex_height,5)
 
 #returns an array of [dex_height, [class1, class2, class3, etc]]
-#where class1...6 represent the (overlapping) lower and upper boundaries of each class 
+#where class1...6 represent the (overlapping) lower and upper boundaries of each class
 def get_class_boundaries(mon):
 	height = get_dex_height(mon)
 	#H-Avalugg is still VERY broken and doesn't have any actual data available
@@ -222,10 +227,13 @@ def get_class_boundaries(mon):
 	#so to make that workable, for the calculations we'll hardcode K-Avalugg's dex height
 	#and assume that H-Avalugg actually has all the same class boundaries
 	#this could be incorrect, but it's at least less incorrect than calculating them with the wrong heights
+	avalugg_flag = False
+	real_height = None
 	if "AVALUGG" in mon.upper() and "HISUI" in mon.upper():
+		avalugg_flag = True
 		real_height = height
 		height = get_dex_height("AVALUGG")
-	
+
 	template = get_template(mon)
 	if template:
 		classes = template['sizeclasses']
@@ -236,7 +244,7 @@ def get_class_boundaries(mon):
 		xxl_low = rounded_variate(classes[4], height)
 		xxl_high = rounded_variate(classes[5], height)
 		#clean up the disgusting Avalugg mangling we just did
-		if "AVALUGG" in mon.upper() and "HISUI" in mon.upper():
+		if avalugg_flag:
 			height = real_height
 		#and return output
 		return [height, [xxs_low, xs_low, xs_high, xl_low, xxl_low, xxl_high]]
@@ -274,7 +282,7 @@ def get_height_chance(mon, height):
 	#XXL2 Largest: 1.70 - 1.75 (1/250 chance XXL * 1/20 chance Largest)
 	#XXL3 Normal: 1.50 - 1.90 (1/250 chance XXL * 19/20 chance not Largest)
 	#XXL3 Largest: 1.90 - 2.00 (1/250 chance XXL * 1/20 chance Largest)
-	
+
 	#Also note that Scatterbug's XXS class boundaries do not match every other species'
 	#and range from 0.25x to 0.50x.
 	#It appears that the same split occurs where the bottom 20% of this range only covers 5% of XXS spawns
@@ -301,7 +309,7 @@ def get_height_chance(mon, height):
 
 	if height_variate < 1.00:
 		category = -1
-		
+
 		#todo - replace all of this with a very simple check against one step up in classes
 		#check what the winning score will be - if close to boundaries this can behave oddly
 		#todo - this solution is naive and doesn't handle non-contiguous "win" ranges that can occur
@@ -341,7 +349,7 @@ def get_height_chance(mon, height):
 			win_chance += min(winning_variate - classes[1], xs_width) / 40 / xs_width
 		if winning_variate > 0.75: #avg
 			win_chance += (winning_variate - classes[2]) / 500 * 471 / avg_width
-		
+
 		return [category, win_chance]
 	else: #for heights exactly 1.00 it doesn't matter in what direction we look, so look for higher
 		category = 1
@@ -349,7 +357,7 @@ def get_height_chance(mon, height):
 		winning_variate = winning_score / dex_height
 		if winning_variate >= classes[5]:
 			return [category, win_chance] #scores this high are not possible, so return the default 0
-		
+
 		#first, assume that the Pokemon is NOT XXL, to get the simple maths out of the way
 		if winning_variate < classes[4]: #xl
 			win_chance += min(classes[4] - winning_variate, xl_width) / 40 / xl_width
@@ -398,7 +406,7 @@ def get_weight_chance(mon, weight):
 		'pokemon_cdfs/cdf_175.txt',
 		'pokemon_cdfs/cdf_200.txt',
 	]
-	
+
 	#line number we're targeting will be 1 higher than the variate * 10k
 	win_var_10k = winning_variate * 10000
 	float_line_num = win_var_10k % 1
@@ -416,6 +424,7 @@ def get_weight_chance(mon, weight):
 		cdf_idx = 2
 	else:
 		print("Error: XXL multiplier for",mon,"not valid; reporting",classes[5])
+		return False
 
 	with open(cdf_files[cdf_idx], 'r', encoding='utf8') as cdf:
 		tsv_reader = csv.DictReader(cdf, delimiter="\t")
@@ -427,7 +436,7 @@ def get_weight_chance(mon, weight):
 			row_chance = float(rows[line_num]['cumChance'])
 			win_chance = 1 - row_chance
 			win_chance -= (float(rows[line_num+1]['cumChance']) - row_chance) * float_line_num
-	
+
 	return [category, win_chance]
 
 #formats a pokemon name the way the game master stores them
@@ -458,14 +467,14 @@ def get_template_name(mon):
 		elif mon_chunks[1] == "PALDEAN_FORM)":
 			mon = mon_chunks[0] + "_PALDEA"
 		elif mon_chunks[0] == "FRILLISH" or mon_chunks[0] == "JELLICENT" or mon_chunks[0] == "PYROAR" or mon_chunks[0] == "MEOWSTIC" or mon_chunks[0] == "OINKOLOGNE":
-		#Pokemon where user display is Male/Female, but game master is Normal/Female (lmao wtf)
+			#Pokemon where user display is Male/Female, but game master is Normal/Female (lmao wtf)
 			mon = mon_chunks[0]+"_"+mon_chunks[1]
 			mon = mon.replace(")","").replace("_MALE","_NORMAL")
 		elif mon_chunks[0] == "ZYGARDE":
 			mon = mon_chunks[0]+"_"+mon_chunks[1]
 			mon = mon.replace("%","_PERCENT").replace("10","TEN").replace("50","FIFTY").replace("_FORME)","")
 		else:
-		#Pokemon with "Pokemon (Form)" names. In many cases the form has a suffix, which we strip.
+			#Pokemon with "Pokemon (Form)" names. In many cases the form has a suffix, which we strip.
 			mon_chunks[1] = mon_chunks[1].replace(")","").replace("_FORME","").replace("_CLOAK","").replace("_FORM","")
 			mon_chunks[1] = mon_chunks[1].replace("_DRIVE","").replace("_FLOWER","").replace("_TRIM","").replace("_SIZE","")
 			mon_chunks[1] = mon_chunks[1].replace("_STYLE","").replace("POM_POM","POMPOM").replace("SUNSHINE","SUNNY").replace("_MODE","")
@@ -480,11 +489,11 @@ def get_template_name(mon):
 	elif mon == "NIDORANM" or mon == "NIDORAN_M":
 		return "NIDORAN_M"
 	elif mon == "ZACIAN":
-	#zac/zam do not display form names in-game yet, but rely on them in gm
+		#zac/zam do not display form names in-game yet, but rely on them in gm
 		return "ZACIAN_HERO"
 	elif mon == "ZAMAZENTA":
 		return "ZAMAZENTA_HERO"
-	
+
 	#handle Rotom, which is stored in GM as ROTOM_TYPE but in dex as "Type Rotom"
 	if "ROTOM" in mon:
 		mon_chunks = mon.split("_")
@@ -513,21 +522,21 @@ def get_template(mon): #mon is always a name of format DARUMAKA_GALAR
 	if template_name in pokemon_templates:
 		return pokemon_templates[template_name]
 	else:
-		return False
+		return None
 
 def get_variates(mon, height, weight):
 	mon = get_template_name(mon)
 
 	#if mon name was incorrect, fail out
 	if not mon:
-		return False
+		return None
 
 	min_height = height-0.005
 	max_height = height+0.005
 	height_data = get_class_boundaries(mon)
 	dex_height = height_data[0]
 	classes = height_data[1]
-	
+
 	min_height_variate = min_height / dex_height
 	max_height_variate = max_height / dex_height
 
@@ -537,7 +546,7 @@ def get_variates(mon, height, weight):
 
 	min_final_weight_variate = min_weight / dex_weight
 	max_final_weight_variate = max_weight / dex_weight
-	
+
 	if min_height_variate < classes[4]: #everything except XXL
 		#formula for classes 1-4 is as follows:
 		#final_weight_variate = weight_variate + (height_variate^2 - 1)
@@ -553,7 +562,7 @@ def get_variates(mon, height, weight):
 		min_weight_variate = min_final_weight_variate - (max_height_variate - 1)
 		max_weight_variate = max_final_weight_variate - (min_height_variate - 1)
 	#todo - clean up this logic so that something that could be in either class takes the min/max of each
-	
+
 	#print("Weight variate is between",min_weight_variate,"and",max_weight_variate)
 	#print("Height variate is between",min_height_variate,"and",max_height_variate)
 
@@ -563,7 +572,7 @@ def get_evolutions(template):
 	settings = template['data']['pokemonSettings']
 	if "evolutionBranch" not in settings:
 		return []
-	
+
 	branches = settings['evolutionBranch']
 	evolution_templates = []
 	for branch in branches:
@@ -576,7 +585,7 @@ def get_evolutions(template):
 		evo_template = get_template(evo_name)
 		evo_obj = {'name': evo_name, 'template': evo_template}
 		evolution_templates.append(evo_obj)
-	
+
 	return evolution_templates
 
 def check_evo_chances(mon, weight, height, override_class_size=False):
@@ -585,10 +594,10 @@ def check_evo_chances(mon, weight, height, override_class_size=False):
 
 	#if mon name was incorrect, fail out
 	if not variates:
-		return False
+		return None
 
 	template = get_template(mon)
-	
+
 	#check class size
 	classes = get_class_boundaries(mon)
 	min_class_boundaries = classes[1][:5]
@@ -609,7 +618,7 @@ def check_evo_chances(mon, weight, height, override_class_size=False):
 			min_class_size = 3
 		else:
 			min_class_size = 4
-		
+
 		if variates[1][1] < 0.50:
 			max_class_size = 0
 		elif variates[1][1] < 0.75:
@@ -625,11 +634,11 @@ def check_evo_chances(mon, weight, height, override_class_size=False):
 		clrprint("Warning: class size unknown", clr="red")
 		if max_class_size == 4:
 			clrprint("ERROR: Evolutions of different XXL class will be incorrect", clr="red")
-	
+
 	#because the height variates reroll completely on evolve, the ones of the prevo are irrelevant
 	#so we just over-write them
 	#[UPDATE] as of ~11 April 2024, height variates no longer reroll on evolved
-	#[		] and therefore we don't rewrite them here any more
+	#[		] and therefore we don't rewrite them here anymore
 	#[		] (there's probably lots of optimisations to make to the code now this is unnecessary)
 	#variates[1][0] = min_class_boundaries[min_class_size]
 	#variates[1][1] = max_class_boundaries[max_class_size]
@@ -643,11 +652,11 @@ def check_evo_chances(mon, weight, height, override_class_size=False):
 		while count < len(evos):
 			evo = evos[count]['template']
 			settings = evo['data']['pokemonSettings']
-			
+
 			#get the class boundaries of the evolution
 			#(this is a bit grossly inefficient)
 			new_bounds = get_class_boundaries(evos[count]['name'])
-			
+
 			#evolutions may have different height class sizes than the pokemon their evolving from
 			#so even though the height variate doesn't reroll, it may *adjust*
 			#no evolution line exists with disparities for XXS,XS,Avg,XL classes, so we only need
@@ -673,24 +682,29 @@ def check_evo_chances(mon, weight, height, override_class_size=False):
 				#so for the lower bound, we take the max(), and for the higher bound, the min()
 				adj_h_variates[0] = max(new_bounds[1][:5][min_class_size], adj_h_variates[0])
 				adj_h_variates[1] = min(new_bounds[1][1:][max_class_size], adj_h_variates[1])
-			
+
 			#calculate combined variates now that we've (potentially) adjusted the height variates
 			if min_class_size == 4:
 				#guaranteed XXLs have a different weight formula
 				combined_variates = [(variates[0][0] + (adj_h_variates[0] - 1)), (variates[0][1] + (adj_h_variates[1] - 1))]
 			else:
 				combined_variates = [(variates[0][0] + (adj_h_variates[0]**2 - 1)), (variates[0][1] + (adj_h_variates[1]**2 - 1))]
-			
+
 			#for mons with split genders (e.g., Pyroar) this DOES print both
 			#but doesn't indicate which is which. Should probably fix at some point
 			print("Calculating sizes for",settings['pokemonId'])
-			
+
 			#calculate min/max heights
 			min_height = settings['pokedexHeightM'] * adj_h_variates[0]
 			max_height = settings['pokedexHeightM'] * adj_h_variates[1]
 			#now for the weights
 			min_weight = settings['pokedexWeightKg'] * combined_variates[0]
 			max_weight = settings['pokedexWeightKg'] * combined_variates[1]
+			#declare vars for records
+			short = None
+			tall = None
+			light = None
+			heavy = None
 			#and check what records to print
 			print_small = False
 			print_large = False
@@ -729,11 +743,11 @@ def check_evo_chances(mon, weight, height, override_class_size=False):
 				if heavy < max_weight:
 					print_evo = True
 			#check if we should evolve this mon
-			if print_evo == False:
-				clrprint("DO NOT EVOLVE. No new record can be set.", clr="black")
-			elif print_evo == True:
+			if print_evo:
 				clrprint("EVOLVE. This can set a new high score.", clr="green")
-			
+			else:
+				clrprint("DO NOT EVOLVE. No new record can be set.", clr="black")
+
 			#and handle any third-stage evos
 			evos = evos + get_evolutions(evo)
 			count += 1
@@ -746,7 +760,7 @@ def analyse_score(score):
 	#get Pokemon from the chart name
 	#todo - need to handle form names specially here
 	mon = format_name(score['chart'][8:])
-	
+
 	#don't analyse Pumpkaboo line as we don't know how it works yet
 	if "PUMPKABOO" in mon or "GOURGEIST" in mon:
 		print("Skipping analysis of",mon)
@@ -754,31 +768,37 @@ def analyse_score(score):
 
 	#don't analyse Zorua highest weights, because they're bugged in-game
 	if "ZORUA" in mon or "ZOROARK" in mon:
-		if score['polarity'] == 1 and score['type'] == 0:
+		if score['polarity'] == 1 and score['size_type'] == 0:
 			print("Skipping analysis of heaviest",mon)
 			return False
-	
+
 	print("Analysing mon: ",mon)
 
 	size_set = score['score']
 	#we need to offset the scores by the rounding margin used to calculate win chances
-	#in order to get the chances of *setting* that score, rather than the chances of *beating* it
+	#in order to get the chance of *setting* that score, rather than the chances of *beating* it
 	#score['polarity'] is 0 for low, 1 for high
 	if score['polarity'] == 0:
 		size_beaten = score['score'] + 0.01
 	elif score['polarity'] == 1:
 		size_beaten = score['score'] - 0.01
+	else:
+		clrprint("ERROR: polarity", score['polarity'], "is not valid", clr="red")
+		return
 
-	#score['type'] is 0 for weight, 1 for height
+	#score['size_type'] is 0 for weight, 1 for height
 	#note that get_*eight_chance returns a list of two variables
 	#idx 0 is -1 if lower is better, +1 if higher is better. We can ignore that.
 	#idx 1 is the list of win chances depending on species class. This is what we want
-	if score['type'] == 0:
+	if score['size_type'] == 0:
 		chance_to_set = get_weight_chance(mon, size_beaten)[1]
 		chance_to_beat = get_weight_chance(mon, size_set)[1]
-	elif score['type'] == 1:
+	elif score['size_type'] == 1:
 		chance_to_set = get_height_chance(mon, size_beaten)[1]
 		chance_to_beat = get_height_chance(mon, size_set)[1]
+	else:
+		clrprint("ERROR: score size size_type", score['size_type'], "is not valid", clr="red")
+		return
 	print(chance_to_set)
 
 	#construct string
@@ -798,53 +818,53 @@ def analyse_score(score):
 	#first, generate the numbers indicating rarity
 	#we check that this is >0 first to avoid reporting incorrect data for XXS heights (see below)
 	if chance_to_set > 0:
-		frac = round(1/chance_to_set)
-		size = max(3,round(math.log(frac,10))-1) #this will show e.g., 5 decimals for a 1 in 1mil chance
-		perc = str(round(chance_to_set * 100,size))
-		output += "This score was a " +perc+"% chance of occurring (1 in "+str(frac)+")"
+		fraction = round(1/chance_to_set)
+		size = max(3,round(math.log(fraction,10))-1) #this will show e.g., 5 decimals for a 1 in 1mil chance
+		percentage = str(round(chance_to_set * 100,size))
+		output += "This score was a " +percentage+"% chance of occurring (1 in "+str(fraction)+")"
 	else:
 		output += "This score appears to be impossible. If it's definitely correct, yell at <@101709643822157824> to fix his code."
 
 	return output
 
 def getHeightRange(mon):
-    template = get_template(mon)
-    min_xxs = template['sizeclasses'][0]
-    min_xs = template['sizeclasses'][1]
-    max_xxl = template['sizeclasses'][5]
-    min_xxs_round = math.floor(min_xxs*100)/100.0
-    min_floor_bug = math.floor((min_xs-0.01)*100)/100.0
-    #check to see if we can dip under the minimum because of the floor weirdness
-    score_min = min(min_xxs_round, min_floor_bug)
-    #build results
-    true_range = [min_xxs, max_xxl]
-    score_range = [score_min, round(max_xxl*100)/100.0]
-    return [true_range, score_range]
+	template = get_template(mon)
+	min_xxs = template['sizeclasses'][0]
+	min_xs = template['sizeclasses'][1]
+	max_xxl = template['sizeclasses'][5]
+	min_xxs_round = math.floor(min_xxs*100)/100.0
+	min_floor_bug = math.floor((min_xs-0.01)*100)/100.0
+	#check to see if we can dip under the minimum because of the floor weirdness
+	score_min = min(min_xxs_round, min_floor_bug)
+	#build results
+	true_range = [min_xxs, max_xxl]
+	score_range = [score_min, round(max_xxl*100)/100.0]
+	return [true_range, score_range]
 
 #scraper for chart-by-chart
 def load_all_charts():
 	url = "https://cyberscore.me.uk/games/2006.json"
 	page = requests.get(url) #TODO - import cookies here in a safe way
 	pogo = json.loads(page.content)
-	
+
 	chart_groups = pogo['chart_groups']
 	iter_groups = []
 	#removed Pokedex Lightest and Heaviest for a bit after having already iterated over it and fixed a bug with Heaviest
 	target_groups = ["Pokédex Lightest", "Pokédex Heaviest", "Pokédex Shortest", "Pokédex Tallest"]
-	
+
 	for group in chart_groups:
 		if group['group_name'] in target_groups:
 			iter_groups.append(group)
-	
+
 	#slightly redundant way of doing things, consolidate these loops if we don't need the data repeatedly
-	
+
 	#skip lightest/heaviest until later
 	for group in iter_groups:
 		gname = group['group_name']
 		for chart in group['charts']: #Shortest
 			cname = chart['chart_name']
 			chart_json = download_chart(chart)
-			
+
 			analyse_chart(chart_json, gname, cname)
 
 def load_charts_from_disk():
@@ -878,24 +898,24 @@ def load_chart_from_disk(path):
 	chart_json = json.load(f)
 	return chart_json
 
-def get_leader(type, name):
-	chart = get_chart(type, name)
+def get_leader(size_type, name):
+	chart = get_chart(size_type, name)
 	cname = chart['group_name'] + " – " + chart['chart_name']
 	score = chart['scoreboard'][0]
-	suffix_type = "kg" if (type == "Heaviest" or type == "Lightest") else "m"
+	suffix_type = "kg" if (size_type == "Heaviest" or size_type == "Lightest") else "m"
 	print(score['username'], "is the leader on", cname, "with a score of", score['submission'], suffix_type)
 
-def get_xx_leaderboard(type, mode="print"):
+def get_xx_leaderboard(size_type, mode="print"):
 	r = {}
-	chart_count = len(processed_charts[type])
-	for cname in processed_charts[type]:
-		chart = processed_charts[type][cname]
-		
+	chart_count = len(processed_charts[size_type])
+	for cname in processed_charts[size_type]:
+		chart = processed_charts[size_type][cname]
+
 		template = get_template(cname)
 
 		#manual handling for edge cases
 		if "PUMPKABOO" in cname:
-			if type == "Shortest" or "PUMPKABOO_SUPER" not in cname:
+			if size_type == "Shortest" or "PUMPKABOO_SUPER" not in cname:
 				#for Tallest SUPER we can just use the existing XXL bound
 				#but for everything else we have to skip, as no XXS or XXL exists
 				chart_count -= 1
@@ -905,11 +925,11 @@ def get_xx_leaderboard(type, mode="print"):
 		for sub in scoreboard:
 			if sub['username'] not in r: #init any users seen for the first time
 				r[sub['username']] = 0
-			if type == "Tallest" and sub['submission'] >= template['sizeclasses'][4]:
+			if size_type == "Tallest" and sub['submission'] >= template['sizeclasses'][4]:
 				r[sub['username']] += 1
-			elif type == "Shortest" and sub['submission'] < template['sizeclasses'][1]:
+			elif size_type == "Shortest" and sub['submission'] < template['sizeclasses'][1]:
 				r[sub['username']] += 1
-	
+
 	output = ""
 	last_score = 0
 	curr_pos = 0
@@ -948,41 +968,47 @@ def get_xxl_count(username):
 def get_user_score(scoreboard, user):
 	score = None
 	for sub in scoreboard:
-		if sub['username'] == username:
+		if sub['username'] == user:
 			score = sub
 			break
 	return score
 
-def get_chart(type, name):
+def get_chart(size_type, name):
 	name = get_template_name(format_name(name))
-	return processed_charts[type][name]
+	return processed_charts[size_type][name]
 
 def download_chart(chart_data):
 	page = requests.get(chart_data['chart_url']['json'])
 	chart = json.loads(page.content)
 	#todo – change this path when set up properly
 	local_path = "D:/Programming/Cyberscore/Discord bot/chart_jsons/" + str(chart_data['chart_id']) + ".json"
-	f=open(local_path, "w+")
-	json.dump(chart, f)
+	with open(local_path, "w+") as f:
+		json.dump(chart, f)
 	return chart
 
 def analyse_chart(chart_json, gname, cname):
 	if len(chart_json['scoreboard']) == 0:
 		print("No scores submitted for", cname)
-	
+
 	mon = format_name(cname[8:])
+	weight_range = []
+	height_range = []
 
 	if "Lightest" in gname or "Heaviest" in gname:
-		wrange = [0, get_dex_weight(mon)*2.75]
+		weight_range = [0, get_dex_weight(mon)*2.75]
 	elif "Shortest" in gname or "Tallest" in gname:
 		#don't analyse Pumpkaboo line as we don't know how it works yet
 		if "PUMPKABOO" in mon or "GOURGEIST" in mon:
 			print("Skipping height analysis of",mon)
-		
-		hrange = getHeightRange(mon)[1] #[1] takes only the score-rounded height range
-		if not hrange:
-			print("Error generating hrange for",cname)
 			return
+
+		height_range = getHeightRange(mon)[1] #[1] takes only the score-rounded height range
+		if not height_range:
+			print("Error generating height_range for",cname)
+			return
+	else:
+		print("ERROR: group name", gname, "not valid")
+		return
 
 	for sub in chart_json['scoreboard']:
 		rid = sub['record_id']
@@ -990,18 +1016,20 @@ def analyse_chart(chart_json, gname, cname):
 		user = sub['username']
 		uid = sub['user_id']
 		score = sub['submission']
+		best_score = None
+		invalid_score = False
 
 		if "Lightest" in gname:
-			best_score = wrange[0]
+			best_score = weight_range[0]
 			invalid_score = score < best_score
 		elif "Heaviest" in gname:
-			best_score = wrange[1]
+			best_score = weight_range[1]
 			invalid_score = score > best_score
 		elif "Shortest" in gname:
-			best_score = hrange[0]
+			best_score = height_range[0]
 			invalid_score = score < best_score
 		elif "Tallest" in gname:
-			best_score = hrange[1]
+			best_score = height_range[1]
 			invalid_score = score > best_score
 
 		if invalid_score: #[1] for Tallest
@@ -1018,15 +1046,15 @@ def load_personal_records(sessid):
 		gname = group['group_name']
 		if group['group_name'] not in target_groups:
 			continue
-		#if we get here, it's a size group and we want to save scores
+		#if we get here, it's a size group, and we want to save scores
 		for chart in group['charts']:
 			#find the exact template ready to add
 			cname = chart['chart_name']
 			template = get_template(format_name(cname[8:]))
 			if 'scores' not in template:
 				template['scores'] = {}
-		
-			if chart['record']['submission'] == None:
+
+			if chart['record']['submission'] is None:
 				#this is an unsubmitted score
 				template['scores'][gname] = None
 			else:
@@ -1046,7 +1074,7 @@ def sanity_check_class_boundaries():
 		if "sizeclasses" not in template:
 			print("Size data not available for",mon)
 			continue
-		
+
 		#only print one of each Scatterbug (they're all identical)
 		if "SCATTERBUG" in mon or "SPEWPA" in mon or "VIVILLON" in mon:
 			if "ARCHIPELAGO" not in mon:
@@ -1056,7 +1084,7 @@ def sanity_check_class_boundaries():
 			if mon == "V0710_POKEMON_PUMPKABOO_AVERAGE":
 				print("Pumpkaboo is incompatible with the modern XXS/XXL system.")
 			continue
-		
+
 		classes = template['sizeclasses']
 		height = template['data']['pokemonSettings']['pokedexHeightM']
 		name = template['templateId']
