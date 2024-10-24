@@ -209,7 +209,7 @@ def scrape_latest():
 
 #force indicates whether it was a forced update by a user, or a daily check
 #idx indicates the rank at which we're going to start printing to Discord
-#sort_param is applicable only when size_type="Medal" or size_type="Trophy", and represents what we sort by
+#sort_param is applicable only when board_type="Medal" or board_type="Trophy", and represents what we sort by
 #for medals, sort_param 0 = plat, 1 = gold, 2 = silver, 3 = bronze
 #for trophies, sort_param 0 = points, 1 = plats, and 2-6 represent gold, silver, bronze, 4th, 5th
 def scrape_leaderboard(board_type, force, idx, sortParam = 0, ytd = False, gain = False):
