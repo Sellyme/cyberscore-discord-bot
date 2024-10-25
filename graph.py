@@ -109,7 +109,7 @@ def build_user_scores(user, board, sort_type = "plat"):
             # ideally we have some kind of indexing by position
             score = 0
             for username in data:
-                if username != user:
+                if username.lower() != user.lower():
                     continue
 
                 user_entry = data[username]
