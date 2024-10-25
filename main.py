@@ -8,7 +8,7 @@ import inflect #used for converting integers to ordinal positions
 import re, math
 import traceback
 
-import scrape, config, pokemon #custom imports
+import scrape, config, pokemon, graph #custom imports
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -356,6 +356,10 @@ async def on_message(message):
 		await compare_weight(message)
 	elif message.content.startswith("!chartchallenge") or message.content.startswith("!cc"):
 		await handle_chart_challenge(message)
+	elif message.content.startswith("!lead"):
+		await handle_lead_graph(message)
+	elif message.content.startswith("!ugraph"):
+		await handle_user_graph(message)
 
 async def handle_generic_leaderboard(message, board_type):
 	print("Handling message: '" + message.content + "'")
@@ -596,6 +600,49 @@ async def compare_weight(message):
 		output = "A " + m.group(1).title() + " " + size_str + " than " + m.group(2) +" kg is not possible."
 
 	await message.channel.send(output)
+
+async def handle_lead_graph(message):
+	args = get_args(message)
+	board_type = args[1]
+	sort_type = None
+	if len(args) > 2:
+		sort_type = args[2]
+	else:
+		sort_type = "plat" #default, even for boards with a single point-based sort
+	graph_name = graph.generate_lead_diff_graph(board_type, sort_type)
+
+	channel = client.get_channel(message.channel.id)
+	#create the discord File
+	with open("graphs/"+graph_name, 'rb') as f:
+		picture = discord.File(f)
+		await channel.send(file=picture)
+
+	try:
+		os.remove("graphs/"+graph_name)
+	except:
+		print("Error removing graph", graph_name)
+
+async def handle_user_graph(message):
+	args = get_args(message)
+	user = args[1]
+	board_type = args[2]
+	sort_type = None
+	if len(args) > 3:
+		sort_type = args[3]
+	else:
+		sort_type = "plat"
+	graph_name = graph.generate_user_graph(user, board_type, sort_type)
+
+	channel = client.get_channel(message.channel.id)
+	# create the discord File
+	with open("graphs/" + graph_name, 'rb') as f:
+		picture = discord.File(f)
+		await channel.send(file=picture)
+
+	try:
+		os.remove("graphs/" + graph_name)
+	except:
+		print("Error removing graph", graph_name)
 
 def get_args(message):
 	args = message.content.split(" ")

@@ -163,3 +163,35 @@ def clean_username(user):
 		user_name = user
 
 	return user_name
+
+def get_award_name(board_type):
+	#TODO - fold this into get_scoreboard_names() and genericise the latter's capitalisation
+	board_type = board_type.lower()
+	if board_type == "starboard":
+		return "CSR"
+	elif board_type == "medal" or board_type == "medals":
+		return "Medals"
+	elif board_type == "trophy" or board_type == "trophies":
+		return "Trophy Points"
+	elif board_type == "arcade":
+		return "Tokens"
+	elif board_type == "solution":
+		return "Brain Power"
+	elif board_type == "challenge":
+		return "Style Points"
+	elif board_type == "collectible":
+		return "Cyberstars"
+	elif board_type == "incremental":
+		return "VXP" #incremental board is VXP by default, we separate CXP into a Level board
+	elif board_type == "level":
+		return "CXP"
+	elif board_type == "rainbow":
+		return "Rainbow Power"
+	elif board_type == "submissions" or board_type == "subs":
+		return "Submissions"
+	elif board_type == "proof":
+		return "Proofs"
+	elif board_type == "video" or board_type == "vproof":
+		return "Video proofs"
+	elif board_type == "speedrun":
+		return "Speed" #official name is "Speedrun Time" but that's a bit weird and ambiguous
