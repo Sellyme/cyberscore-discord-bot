@@ -53,48 +53,160 @@ def get_file_by_year(year, file_dir):
 	#print("DEBUG: pulling file ", req_file)
 	return req_file
 
+def get_sort_param(board_type, args):
+	#takes in a board type + list of arguments from a user command and looks for sort flags
+	#e.g., an argument that says "-g" suggests sorting by gold medals/trophies
+	sortParam = None
+	board_type = board_type.lower()
+
+	#convert all args to lowercase for checking
+	args = [x.lower() for x in args]
+
+	if board_type.startswith("medal"):
+		if "-g" in args or "gold" in args:
+			sortParam = 1
+		elif "-s" in args or "silver" in args:
+			sortParam = 2
+		elif "-b" in args or "bronze" in args:
+			sortParam = 3
+	elif board_type.startswith("troph"):
+		if "-p" in args or "platinum" in args or "plat" in args:
+			sortParam = 1
+		elif "-g" in args or "gold" in args:
+			sortParam = 2
+		elif "-s" in args or "silver" in args:
+			sortParam = 3
+		elif "-b" in args or "bronze" in args:
+			sortParam = 4
+		elif "-4" in args or "4th" in args:
+			sortParam = 5
+		elif "-5" in args or "5th" in args:
+			sortParam = 6
+	#we don't have sortparams for level vs cxp, because those are treated as separate boards
+	return sortParam
+
 def get_scoreboard_names(board_type, sortParam = 0):
 	#takes in a consistent human-readable name of a specific scoreboard, and an optional sort poram
 	#returns an array containing the name used as the site's URL for that board,
 	#the name used for the filesystem where archives are stored, and the sort parameter name
 
 	#set defaults
-	site_name = board_type.lower()
-	file_name = board_type.lower()
-	sortType = ""
+	display_name = None
+	board_type = board_type.lower() #normalise this to avoid case-sensitive matching
+	site_name = None
+	file_name = None
+	award_name = None
+	sort_type = ""
 
-	#handle custom sortParams, and override for any name mismatches
-	if board_type == "Medal":
-		site_name = "medal"
-		file_name = "medals"
-		if sortParam == 1:
-			sortType = "gold"
-		elif sortParam == 2:
-			sortType = "silver"
-		elif sortParam == 3:
-			sortType = "bronze"
-	elif board_type == "Trophy":
-		if sortParam == 1:
-			sortType = "platinum"
-		elif sortParam == 2:
-			sortType = "gold"
-		elif sortParam == 3:
-			sortType = "silver"
-		elif sortParam == 4:
-			sortType = "bronze"
-		elif sortParam == 5:
-			sortType = "4th"
-		elif sortParam == 6:
-			sortType = "5th"
-	elif board_type == "Level":
-		site_name = "incremental"
-		sortType = "cxp"
-	elif board_type == "Video":
-		site_name = "vproof"
-		file_name = "vproof"
+	match board_type:
+		case "medal" | "medal table" | "medals":
+			site_name = "medal"
+			file_name = "medals"
+			display_name = "Medals"
+			if sortParam == 1:
+				sort_type = "gold"
+			elif sortParam == 2:
+				sort_type = "silver"
+			elif sortParam == 3:
+				sort_type = "bronze"
+			else:
+				sort_type = "platinum"
+			award_name = (sort_type + " " + file_name).title() #e.g., "Gold Medals"
+		case "trophy" | "trophy table" | "trophies":
+			site_name = "trophy"
+			file_name = "trophy"
+			display_name = "Trophies"
+			if sortParam == 1:
+				sort_type = "platinum"
+				award_name = "Platinum Trophies"
+			elif sortParam == 2:
+				sort_type = "gold"
+				award_name = "Gold Trophies"
+			elif sortParam == 3:
+				sort_type = "silver"
+				award_name = "Silver Trophies"
+			elif sortParam == 4:
+				sort_type = "bronze"
+				award_name = "Bronze Trophies"
+			elif sortParam == 5:
+				sort_type = "4th"
+				award_name = "4th Place Trophies"
+			elif sortParam == 6:
+				sort_type = "5th"
+				award_name = "5th Place Trophies"
+			else:
+				sort_type = None
+				award_name = "Points"
+		case "level" | "cxp":
+			site_name = "incremental"
+			file_name = "level"
+			display_name = "Level"
+			sort_type = "cxp"
+			award_name = "Level" #your score is displayed in units of Level, not of CXP
+		case "video" | "vproof" | "video proof" | "videos" | "video proofs":
+			site_name = "vproof"
+			file_name = "vproof"
+			display_name = "Video Proof"
+			award_name = "Videos"
+		case "proof" | "proofs":
+			site_name = "proof"
+			file_name = "proof"
+			display_name = "Proof"
+			award_name = "Proofs"
+		case "arcade" | "tokens":
+			site_name = "arcade"
+			file_name = "arcade"
+			display_name = "Arcade"
+			award_name = "Tokens"
+		case "challenge" | "uc" | "user challenge" | "sp" | "style points":
+			site_name = "challenge"
+			file_name = "challenge"
+			display_name = "User Challenge"
+			award_name = "Style Points"
+		case "collectible" | "collectible" | "cyberstars" | "stars":
+			site_name = "collectible"
+			file_name = "collectible"
+			display_name = "Collector's Cache"
+			award_name = "Cyberstars"
+		case "incremental" | "vxp":
+			site_name = "incremental"
+			file_name = "incremental"
+			display_name = "Experience"
+			award_name = "VXP"
+		case "rainbow" | "rp":
+			site_name = "rainbow"
+			file_name = "rainbow"
+			display_name = "Rainbow"
+			award_name = "Rainbow Power"
+		case "solution" | "brain power" | "bp":
+			site_name = "solution"
+			file_name = "solution"
+			display_name = "Solution"
+			award_name = "Brain Power"
+		case "speedrun":
+			site_name = "speedrun"
+			file_name = "speedrun"
+			display_name = "Speedrun"
+			award_name = "Speedrun Time"
+		case "starboard" | "mainboard" | "csr":
+			site_name = "starboard"
+			file_name = "starboard"
+			display_name = "Starboard"
+			award_name = "CSR"
+		case "submissions" | "subs":
+			site_name = "submissions"
+			file_name = "submissions"
+			display_name = "Submissions"
+			award_name = "Submissions"
 
 	#and return the results
-	return [site_name, file_name, sortType]
+	return {
+		'site_name': site_name,
+		'file_name': file_name,
+		'display_name': display_name,
+		'award_name': award_name,
+		'sort_type': sort_type,
+	}
 
 def get_leaderboard_from_disk(file_name, ytd = False):
 	#parses and returns a leaderboard of the specified size_type from a certain date.

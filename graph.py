@@ -74,13 +74,13 @@ def validate_board_sort(board, filename, sort):
     # returns True if a board filename matches the request sort, False otherwise
     board = board.lower()
     if board == "medals" or board == "trophy":
-        if sort == "plat":
-            if filename.count("_") > 1:
-                # if there's a suffix indicating board size_type, it's not plat
-                return False
-        else:
+        if sort:
             if sort not in filename:
                 # and if we've set a different sort, discard any not containing that
+                return False
+        else:
+            if filename.count("_") > 1:
+                # if there's a suffix indicating board size_type, it's not plat
                 return False
     return True
 
@@ -88,13 +88,13 @@ def validate_board_sort(board, filename, sort):
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-import numpy as np
+#import numpy as np #not used yet but probably should be for multi-user graphs
 
 from datetime import datetime
 
 matplotlib.use("TkAgg") #this fixes rendering in PyCharm
 
-def build_user_scores(user, board, sort_type = "plat"):
+def build_user_scores(user, board, sort_type = None):
     p = "D:/Programming/Cyberscore/Discord bot/leaderboards/archive/" + board + "/"
     timestamps = []
     scores = []
@@ -135,69 +135,71 @@ def build_lead_differences(board, sort_type = "plat"):
 
     return {'x_values': x_values, 'y_values': y_values}
 
-def generate_lead_diff_graph(board, sort_type = "plat"):
+def generate_lead_diff_graph(board, sort_type = None):
     #takes in some parameters for what board/sort to render a graph for
     #then creates the graph and saves it to /graphs/
     #returning the filename (*without* "/graphs/") of the saved file
-    graph_data = build_lead_differences(board, sort_type)
+    sb_names = cmfn.get_scoreboard_names(board, sort_type)
+    graph_data = build_lead_differences(sb_names['file_name'], sb_names['sort_type'])
 
     fig, ax = plt.subplots()
     ax.plot(graph_data['x_values'], graph_data['y_values'])
 
-    #format x axis
+    #format axes
     plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%d/%m/%Y'))
-    #below line commented out as the default auto_fmt appears to bucket by month, which works nicely
-    #plt.gca().xaxis.set_major_locator(mdates.DayLocator(interval=40))  # tweak this for spacing if needed
-    plt.gcf().autofmt_xdate() #rotates labels diagonally
-
-    #titles and labels
-    graph_title = "Lead progression — " + board
-    if sort_type != "plat":
-        graph_title += " ("+sort_type+")"
-    ax.set_title(graph_title)
-    ax.set_xlabel("Date")
-    ax.set_ylabel(cmfn.get_award_name(board)) #todo - consult a reference dictionary for board type -> point name
-    #force y-axis to start at 0
+    plt.gcf().autofmt_xdate() #rotates date labels diagonally
     ax.set_ylim(bottom=0)
 
-    #generate filename
-    curr_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    graph_name = board
-    if sort_type != "plat":
-        graph_name += "_"+sort_type
-    graph_name += "_"+curr_time + ".png"
-    plt.savefig('graphs/'+graph_name, bbox_inches="tight")
+    #titles and labels
+    graph_title = "Lead progression — " + sb_names['display_name']
+    if sort_type:
+        graph_title += " ("+sb_names['sort_type'].title()+")"
+        #we want just e.g., "Gold" instead of "Gold Medals for the header
+        #since the "Medals" part of it is fairly obvious from "Medal Table"
+        #the award_name ("Gold Medals") is displayed in y-axis label
+    ax.set_title(graph_title)
+    ax.set_xlabel("Date")
+    ax.set_ylabel(sb_names['award_name'])
 
+    #save to image and get the filename we saved it to
+    graph_name = save_graph_to_image(board, sort_type)
     return graph_name
 
-def generate_user_graph(user, board, sort_type = "plat"):
-    graph_data = build_user_scores(user, board, sort_type)
+def generate_user_graph(user, board, sort_type = None):
+    sb_names = cmfn.get_scoreboard_names(board, sort_type)
+
+
+    graph_data = build_user_scores(user, sb_names['file_name'], sb_names['sort_type'])
 
     fig, ax = plt.subplots()
     ax.plot(graph_data['x_values'], graph_data['y_values'])
 
-    #format x axis
+    #format axes
     plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%d/%m/%Y'))
-    #below line commented out as the default auto_fmt appears to bucket by month, which works nicely
-    #plt.gca().xaxis.set_major_locator(mdates.DayLocator(interval=40))  # tweak this for spacing if needed
-    plt.gcf().autofmt_xdate() #rotates labels diagonally
-
-    #titles and labels
-    graph_title = user + " — " + board
-    if sort_type != "plat":
-        graph_title += " ("+sort_type+")"
-    ax.set_title(graph_title)
-    ax.set_xlabel("Date")
-    ax.set_ylabel(cmfn.get_award_name(board)) #todo - consult a reference dictionary for board type -> point name
-    #force y-axis to start at 0
+    plt.gcf().autofmt_xdate() #rotates date labels diagonally
     ax.set_ylim(bottom=0)
 
+    #titles and labels
+    graph_title = user + " — " + sb_names['display_name']
+    if sort_type:
+        graph_title += " ("+sb_names['sort_type']+")"
+    ax.set_title(graph_title)
+    ax.set_xlabel("Date")
+    ax.set_ylabel(cmfn.get_award_name(board))
+    #force y-axis to start at 0
+
+    #save to image and get the filename we saved it to
+    graph_name = save_graph_to_image(board, sort_type)
+    return graph_name
+
+def save_graph_to_image(board, sort_type):
     #generate filename
     curr_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    graph_name = user+"_"+board
-    if sort_type != "plat":
+    graph_name = board #this is an ephemereal file so no need to use user-friendly names
+    if sort_type:
         graph_name += "_"+sort_type
     graph_name += "_"+curr_time + ".png"
+    #save image, bbox_inches=tight removes whitespace on outer edges
     plt.savefig('graphs/'+graph_name, bbox_inches="tight")
 
     return graph_name

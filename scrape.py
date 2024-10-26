@@ -60,7 +60,7 @@ def scrape_latest():
 		score_col = columns[4]
 		medal_col = columns[5]
 		pos_col = columns[6]
-		type_col = columns[7]
+		#type_col = columns[7] #not used for anything
 		award_col = columns[8]
 
 		country = flag_col.img.get('src').replace("/flags/","").replace(".png","").lower()
@@ -212,14 +212,17 @@ def scrape_latest():
 #sort_param is applicable only when board_type="Medal" or board_type="Trophy", and represents what we sort by
 #for medals, sort_param 0 = plat, 1 = gold, 2 = silver, 3 = bronze
 #for trophies, sort_param 0 = points, 1 = plats, and 2-6 represent gold, silver, bronze, 4th, 5th
-def scrape_leaderboard(board_type, force, idx, sortParam = 0, ytd = False, gain = False):
+def scrape_leaderboard(board_type, force, idx, sortParam = 0, ytd = False):
 	#get all the URL/filestructure names needed
-	site_name, file_name, sortType = cmfn.get_scoreboard_names(board_type, sortParam)
+	scoreboard_names = cmfn.get_scoreboard_names(board_type, sortParam)
+	site_name = scoreboard_names['site_name']
+	file_name = scoreboard_names['file_name']
+	sort_type = scoreboard_names['sort_type']
 
 	#and build the URLs and archive location
 	URL = "https://cyberscore.me.uk/scoreboards/" + site_name
-	if sortType:
-		URL += "?manual_sort=" + sortType
+	if sort_type:
+		URL += "?manual_sort=" + sort_type
 	archive = "leaderboards/archive/" + file_name + "/"
 
 	previous_update = cmfn.get_leaderboard_from_disk(file_name, ytd)
@@ -309,7 +312,7 @@ def scrape_leaderboard(board_type, force, idx, sortParam = 0, ytd = False, gain 
 			score_raw = player.find(class_="medals").get_text().strip()
 			score = cmfn.time_to_seconds(score_raw)
 		else:
-			print("ERROR: scoreboard size_type", board_type, "not valid")
+			print("ERROR: scoreboard board_type", board_type, "not valid")
 			return
 
 		#in some cases score_raw includes excess whitespace
@@ -399,8 +402,8 @@ def scrape_leaderboard(board_type, force, idx, sortParam = 0, ytd = False, gain 
 
 	#save the data to the archive files every time someone does an update
 	curr_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-	if sortType:
-		curr_time += "_"+sortType
+	if sort_type:
+		curr_time += "_"+sort_type
 	arch_file = open(archive+curr_time+".csv", 'x')
 	save_leaderboard(save_data, arch_file)
 	arch_file.close()

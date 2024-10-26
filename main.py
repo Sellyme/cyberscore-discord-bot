@@ -8,7 +8,7 @@ import inflect #used for converting integers to ordinal positions
 import re, math
 import traceback
 
-import scrape, config, pokemon, graph #custom imports
+import scrape, config, pokemon, graph, cmfn #custom imports
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -157,12 +157,7 @@ async def scrape_leaderboard(board_type, force = False, idx = 0, channel_id = co
 	results = scrape.scrape_leaderboard(board_type, force, idx, sort_param, ytd, gain)
 	#result should be a pure string
 	print(results)
-	#add some more user-friendly names for the embed titles where needed
-	if board_type == "Video":
-		name = "Video Proof"
-	elif board_type == "Challenge":
-		name = "User Challenge"
-	elif board_type == "Medal":
+	if board_type == "Medal":
 		name = "Medal Table"
 		if sort_param == 0:
 			name += " <:plat:930611250809958501>"
@@ -189,7 +184,7 @@ async def scrape_leaderboard(board_type, force = False, idx = 0, channel_id = co
 		elif sort_param == 6:
 			name += " (5ths)"
 	else:
-		name = board_type
+		name = cmfn.get_scoreboard_names(board_type, sort_param)['display_name']
 
 	#level leaderboard is effectively printed in the VXP leaderboard
 	#and submissions leaderboard changes are shown in daily top subs
@@ -383,28 +378,9 @@ async def handle_generic_leaderboard(message, board_type):
 				ytd = True
 			elif param == "gain":
 				gain = True
-		
-		#handle medal sort order params
-		if board_type == "Medal":
-			if "-g" in args:
-				sortParam = 1
-			elif "-s" in args:
-				sortParam = 2
-			elif "-b" in args:
-				sortParam = 3
-		elif board_type == "Trophy":
-			if "-p" in args:
-				sortParam = 1
-			elif "-g" in args:
-				sortParam = 2
-			elif "-s" in args:
-				sortParam = 3
-			elif "-b" in args:
-				sortParam = 4
-			elif "-4" in args:
-				sortParam = 5
-			elif "-5" in args:
-				sortParam = 6
+
+		#handle medal/trophy sort order params
+		sortParam = cmfn.get_sort_param(board_type, args)
 
 	print("Scraping " + board_type + " leaderboard with idx " + str(idx) + " and sort_param " + str(sortParam))
 	await scrape_leaderboard(board_type, True, idx, message.channel.id, sortParam, ytd, gain)
@@ -604,11 +580,7 @@ async def compare_weight(message):
 async def handle_lead_graph(message):
 	args = get_args(message)
 	board_type = args[1]
-	sort_type = None
-	if len(args) > 2:
-		sort_type = args[2]
-	else:
-		sort_type = "plat" #default, even for boards with a single point-based sort
+	sort_type = cmfn.get_sort_param(board_type, args)
 	graph_name = graph.generate_lead_diff_graph(board_type, sort_type)
 
 	channel = client.get_channel(message.channel.id)
@@ -626,11 +598,7 @@ async def handle_user_graph(message):
 	args = get_args(message)
 	user = args[1]
 	board_type = args[2]
-	sort_type = None
-	if len(args) > 3:
-		sort_type = args[3]
-	else:
-		sort_type = "plat"
+	sort_type = cmfn.get_sort_param(board_type, args)
 	graph_name = graph.generate_user_graph(user, board_type, sort_type)
 
 	channel = client.get_channel(message.channel.id)
