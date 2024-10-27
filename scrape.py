@@ -230,14 +230,21 @@ def scrape_leaderboard(board_type, force, idx, sortParam = 0, ytd = False):
 	#perform web scrape
 	page = requests.get(URL, timeout=config.timeout)
 	soup = BeautifulSoup(page.content, "html.parser")
-	table = soup.find(id="scoreboard_classic")
-	players = list(table.find_all("tr"))
 
-	#Some boards have a header, so strip that
-	if (board_type == "Rainbow" or board_type == "Submissions" or board_type == "Incremental"
-			or board_type == "Proof" or board_type == "Video" or board_type == "Speedrun" or board_type == "Level"
-			or board_type == "Medal" or board_type == "Trophy"):
-		players.pop(0)
+	if board_type != "Video":
+		#this was the old way we scraped leaderboards
+		#Some change to the video board necessitated a more precise approach
+		#todo - test if that generalises and remove this section + if statement if so
+		table = soup.find(id="scoreboard_classic")
+		players = list(table.find_all("tr"))
+
+		#Some boards have a header, so strip that
+		if (board_type == "Rainbow" or board_type == "Submissions" or board_type == "Incremental"
+				or board_type == "Proof" or board_type == "Video" or board_type == "Speedrun" or board_type == "Level"
+				or board_type == "Medal" or board_type == "Trophy"):
+			players.pop(0)
+	else:
+		players = soup.find_all(class_="entry")
 
 	#work out how many players we have to scrape
 	#with current site UI this should be a maximum of 100, but fewer if the leaderboard
