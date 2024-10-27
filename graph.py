@@ -162,13 +162,11 @@ def generate_lead_diff_graph(board, sort_type = None):
     ax.set_ylabel(sb_names['award_name'])
 
     #save to image and get the filename we saved it to
-    graph_name = save_graph_to_image(board, sort_type)
+    graph_name = save_graph_to_image(board, sb_names['sort_type'])
     return graph_name
 
 def generate_user_graph(user, board, sort_type = None):
     sb_names = cmfn.get_scoreboard_names(board, sort_type)
-
-
     graph_data = build_user_scores(user, sb_names['file_name'], sb_names['sort_type'])
 
     fig, ax = plt.subplots()
@@ -185,11 +183,11 @@ def generate_user_graph(user, board, sort_type = None):
         graph_title += " ("+sb_names['sort_type']+")"
     ax.set_title(graph_title)
     ax.set_xlabel("Date")
-    ax.set_ylabel(cmfn.get_award_name(board))
+    ax.set_ylabel(sb_names['award_name'])
     #force y-axis to start at 0
 
     #save to image and get the filename we saved it to
-    graph_name = save_graph_to_image(board, sort_type)
+    graph_name = save_graph_to_image(board, sb_names['sort_type'])
     return graph_name
 
 def save_graph_to_image(board, sort_type):

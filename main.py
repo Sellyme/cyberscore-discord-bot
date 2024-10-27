@@ -154,7 +154,7 @@ async def scrape_leaderboard(board_type, force = False, idx = 0, channel_id = co
 
 	channel = client.get_channel(channel_id)
 
-	results = scrape.scrape_leaderboard(board_type, force, idx, sort_param, ytd, gain)
+	results = scrape.scrape_leaderboard(board_type, force, idx, sort_param, ytd)
 	#result should be a pure string
 	print(results)
 	if board_type == "Medal":
@@ -383,7 +383,7 @@ async def handle_generic_leaderboard(message, board_type):
 		sortParam = cmfn.get_sort_param(board_type, args)
 
 	print("Scraping " + board_type + " leaderboard with idx " + str(idx) + " and sort_param " + str(sortParam))
-	await scrape_leaderboard(board_type, True, idx, message.channel.id, sortParam, ytd, gain)
+	await scrape_leaderboard(board_type, True, idx, message.channel.id, sortParam, ytd)
 
 async def handle_submitters(message, board_type): #board_type is either "user" or "game"
 	days = 1 #default
