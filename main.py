@@ -629,7 +629,8 @@ async def report_error(channel_id, message):
 	channel = client.get_channel(channel_id)
 	await channel.send(message)
 
-if 'idlelib.run' not in sys.modules:
+#allow running the bot in IDLE or PyCharm for testing/utility funcs without actually connecting to Discord
+if 'idlelib.run' not in sys.modules and "PYCHARM_HOSTED" not in os.environ:
 	client.run(TOKEN)
 else:
 	pokemon.get_game_master()
