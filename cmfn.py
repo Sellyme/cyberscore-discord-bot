@@ -69,6 +69,8 @@ def get_sort_param(board_type, args):
 			sortParam = 2
 		elif "-b" in args or "bronze" in args:
 			sortParam = 3
+		else:
+			sortParam = 0
 	elif board_type.startswith("troph"):
 		if "-p" in args or "platinum" in args or "plat" in args:
 			sortParam = 1
@@ -82,6 +84,8 @@ def get_sort_param(board_type, args):
 			sortParam = 5
 		elif "-5" in args or "5th" in args:
 			sortParam = 6
+		else:
+			sortParam = 0
 	#we don't have sortparams for level vs cxp, because those are treated as separate boards
 	return sortParam
 
