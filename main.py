@@ -124,7 +124,19 @@ async def scrape_leaderboards():
 				f.seek(0)
 				f.write(now.strftime("%Y-%m-%d %H:%M:%S"))
 				f.truncate()
-				
+
+				channel = client.get_channel(config.leaderboard_channel)
+
+				#if there was a cc, print that
+				if now.day == 1:
+					month = now.month - 1
+					year = now.year
+					if month == 0:
+						month = 12
+						year = year-1
+					cc_url = str(year) + "-" + str(month)
+					await print_chart_challenge(0, cc_url, channel)
+
 				#finally, print out a role ping if there was a positional change
 				if top10_change:
 					channel = client.get_channel(config.leaderboard_channel)
@@ -444,13 +456,17 @@ async def handle_chart_challenge(message):
 	else:
 		#if a user requests a month of the form 2024-03 we can easily convert it
 		month = month.replace("-0","-")
-	
-	print("Scraping chart challenge leaderboard with idx " + str(idx) + " and month " + month)
-	results = await scrape.scrape_chart_challenge(idx, month)
+
 	#and post to Discord
 	channel = client.get_channel(message.channel.id)
-	embed_name = "Chart Challenge ("+month+")"
-	
+	print_chart_challenge(idx, month, channel)
+
+
+async def print_chart_challenge(idx, month, channel):
+	print("Scraping chart challenge leaderboard with idx " + str(idx) + " and month " + month)
+	results = await scrape.scrape_chart_challenge(idx, month)
+	embed_name = "Chart Challenge (" + month + ")"
+
 	embed = discord.Embed()
 	embed.add_field(name=embed_name, value=results)
 	embed.timestamp = datetime.now(timezone.utc)
