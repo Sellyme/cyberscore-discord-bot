@@ -643,9 +643,6 @@ def check_evo_chances(mon, weight, height, override_class_size=False):
 	#variates[1][0] = min_class_boundaries[min_class_size]
 	#variates[1][1] = max_class_boundaries[max_class_size]
 
-	#combine both height and weight variates into one number for final weight
-
-
 	evos = get_evolutions(template)
 	count = 0
 	if len(evos) > 0:
