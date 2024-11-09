@@ -513,6 +513,9 @@ def get_template_name(mon):
 	elif mon == "SCATTERBUG" or mon == "SPEWPA" or mon == "VIVILLON":
 		#we don't care which Scatterbug form we return, so just pick any
 		return mon+"_ARCHIPELAGO"
+	elif mon == "DEERLING" or mon == "SAWSBUCK":
+		#again, we don't care which form, so just get data for spring
+		return mon+"_SPRING"
 	else:
 		print("Couldn't find template for",mon)
 		return False
