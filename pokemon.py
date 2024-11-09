@@ -443,11 +443,32 @@ def get_weight_chance(mon, weight):
 #with special characters either converted to ASCII (é→e) or stripped (:),
 #spaces converted to underscores, and all characters capitalised
 def format_name(name):
+	#start by checking for a shorthand regional form representation
+	name = convert_regional_forms(name)
 	#replace all spaces with underscores: "tapu koko" → "TAPU_KOKO"; "JANGMO-O" → "JANGMOO"
 	name = name.upper().replace(" ","_").replace("-","_").replace("é","e").replace("É","E").replace("♀","F").replace("♂","M")
 	for char in ":'’.": #strip special chars: "FARFETCH'D" → "FARFETCHD"; "MR._MIME" → "MR_MIME"
 		if char in name:
 			name = name.replace(char, "")
+	return name
+
+def convert_regional_forms(name):
+	#takes in a name of the form "A-Sandshrew" and outputs it in the form "Sandshrew_Alola"
+	#handling is all done case-insensitively, as format_name() handles capitalisation after this
+	if name.startswith(("K-","k-")):
+		#Kanto and Kalos have no regional forms that are specified by their region name
+		#however many regional forms are forms of Pokemon that are Kanto by default (none for Kalos yet!)
+		#so e.g., "K-Vulpix" may be used to explicitly specify Kanto Vulpix instead of Alolan Vulpix
+		#but since we store that as simply "Vulpix", we can simply strip the prefix
+		name = name.lstrip("k-").lstrip("K-")
+	elif name.startswith(("A-","a-")):
+		name = name.lstrip("A-").lstrip("a-")+"_ALOLA" #yes the inconsistencies with "ALOLA" v "ALOLAN" are dumb
+	elif name.startswith(("G-","g-")):
+		name = name.lstrip("G-").lstrip("g-")+"_GALARIAN"
+	elif name.startswith(("H-","h-")):
+		name = name.lstrip("H-").lstrip("h-")+"_HISUIAN"
+	elif name.startswith(("P-","p-")):
+		name = name.lstrip("P-").lstrip("p-")+"PALDEA"
 	return name
 
 #takes any formatted name, and then converts it into the exact name used in the pokemon_templates dict
