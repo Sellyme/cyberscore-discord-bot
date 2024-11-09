@@ -537,6 +537,9 @@ def get_template_name(mon):
 	elif mon == "DEERLING" or mon == "SAWSBUCK":
 		#again, we don't care which form, so just get data for spring
 		return mon+"_SPRING"
+	elif mon == "FLABEBE" or mon == "FLOETTE" or mon == "FLORGES":
+		#you know the drill
+		return mon+"_ORANGE" #orange used because it's a global one and may help narrow down bugs if used relating to size scores
 	else:
 		print("Couldn't find template for",mon)
 		return False
