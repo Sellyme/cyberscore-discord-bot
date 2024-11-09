@@ -657,6 +657,7 @@ def check_evo_chances(mon, weight, height, override_class_size=False):
 	if max_class_size != min_class_size:
 		clrprint("Warning: class size unknown", clr="red")
 		if max_class_size == 4:
+			#if the class size isn't explicitly XXL, we don't handle XXL class size changes on evolution
 			clrprint("ERROR: Evolutions of different XXL class will be incorrect", clr="red")
 
 	#because the height variates reroll completely on evolve, the ones of the prevo are irrelevant
