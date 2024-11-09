@@ -73,8 +73,9 @@ def generate_top_n(n, board, sort="plat"):  # WIP
 def validate_board_sort(board, filename, sort):
     # returns True if a board filename matches the request sort, False otherwise
     board = board.lower()
+    #if there's a sort, and the board has non-default sorts, and (in the case of medals) the sort isn't the default sort
     if board == "medals" or board == "trophy":
-        if sort:
+        if (sort and board == "trophy") or (sort and sort != "platinum" and board == "medals"):
             if sort not in filename:
                 # and if we've set a different sort, discard any not containing that
                 return False
@@ -88,7 +89,7 @@ def validate_board_sort(board, filename, sort):
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-#import numpy as np #not used yet but probably should be for multi-user graphs
+import numpy as np
 
 from datetime import datetime
 
@@ -165,7 +166,9 @@ def generate_lead_diff_graph(board, sort_type = None):
     graph_name = save_graph_to_image(board, sb_names['sort_type'])
     return graph_name
 
-def generate_user_graph(user, board, sort_type = None):
+def generate_user_graph(user, board, sort_type = None, display = False):
+    #display is a param we explicitly set if using the command line to output the graph to console
+    #otherwise this function saves the graph to disk
     sb_names = cmfn.get_scoreboard_names(board, sort_type)
     graph_data = build_user_scores(user, sb_names['file_name'], sb_names['sort_type'])
 
@@ -186,9 +189,15 @@ def generate_user_graph(user, board, sort_type = None):
     ax.set_ylabel(sb_names['award_name'])
     #force y-axis to start at 0
 
+    #annotations
+    annotate_minmax(graph_data['x_values'], graph_data['y_values'])
+
     #save to image and get the filename we saved it to
-    graph_name = save_graph_to_image(board, sb_names['sort_type'])
-    return graph_name
+    if display:
+        plt.show()
+    else:
+        graph_name = save_graph_to_image(board, sb_names['sort_type'])
+        return graph_name
 
 def save_graph_to_image(board, sort_type):
     #generate filename
@@ -201,3 +210,32 @@ def save_graph_to_image(board, sort_type):
     plt.savefig('graphs/'+graph_name, bbox_inches="tight")
 
     return graph_name
+
+def annotate_minmax(x, y, ax=None):
+    #build the max annotation
+    max_idx = np.argmax(y)
+    xmax = x[max_idx]
+    ymax = max(y)
+    text = "Max: {0:,.9g}".format(ymax) #hopefully no-one gets >1bil VXP
+    if not ax:
+        ax = plt.gca()
+    bbox_props = dict(boxstyle="square,pad=0.3", fc="w", ec="k", lw=0.72)
+    arrowprops = dict(arrowstyle="->")
+    kw = dict(textcoords="offset pixels", arrowprops=arrowprops, bbox=bbox_props, ha="right", va="top")
+    #calculate an x offset to dodge axis
+    #since we right-align the label, we only need to dodge the leftmost axis
+    xmax_offset = 0
+    if max_idx < len(x)/10:
+        xmax_offset += 75
+    ax.annotate(text, xy=(xmax, ymax), xytext=(xmax_offset, -50), **kw)
+
+    #build the min annotation
+    min_idx = np.argmin(y)
+    xmin = x[min_idx]
+    ymin = min(y)
+    text = "Min: {0:,.9g}".format(ymin)
+    #calculate offset
+    xmin_offset = 0
+    if min_idx < len(x)/10:
+        xmin_offset += 75
+    ax.annotate(text, xy=(xmin, ymin), xytext=(xmin_offset, 50), **kw)
