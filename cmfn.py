@@ -119,7 +119,10 @@ def get_scoreboard_names(board_type, sortParam = 0):
 		case "trophy" | "trophy table" | "trophies":
 			site_name = "trophy"
 			file_name = "trophy"
-			display_name = "Trophies"
+			#for display_name we use "trophy table" because just "trophies" would be misleading
+			#as the default sort is trophy points, not trophy count.
+			#this is not the case for the medal table, where "Medals" is indeed the default sort and a good title
+			display_name = "Trophy Table"
 			if sortParam == 1:
 				sort_type = "platinum"
 				award_name = "Platinum Trophies"
@@ -140,7 +143,7 @@ def get_scoreboard_names(board_type, sortParam = 0):
 				award_name = "5th Place Trophies"
 			else:
 				sort_type = None
-				award_name = "Points"
+				award_name = "Trophy Points"
 		case "level" | "cxp":
 			site_name = "incremental"
 			file_name = "level"
