@@ -514,6 +514,9 @@ def get_template_name(mon):
 		return "ZACIAN_HERO"
 	elif mon == "ZAMAZENTA":
 		return "ZAMAZENTA_HERO"
+	elif mon == "MORPEKO":
+		#Morpeko Hangry is a form only available in battles, and is not important for CS purposes
+		return "MORPEKO_FULL_BELLY"
 
 	#handle Rotom, which is stored in GM as ROTOM_TYPE but in dex as "Type Rotom"
 	if "ROTOM" in mon:
