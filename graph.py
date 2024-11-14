@@ -26,7 +26,7 @@ def generate_lead_progression(board, sort="plat"):  # WIP
             leads.append({"dt": dt, "diff": lead})
     return leads
 
-def generate_top_n(n, board, sort="plat"):  # WIP
+def generate_top_n(n, board, sort=None):  # WIP
     # sort is for medal/trophy boards
     # gold/silver/bronze sorts are kept in the same folder
     # so we need to specify which to use
@@ -73,17 +73,21 @@ def generate_top_n(n, board, sort="plat"):  # WIP
 def validate_board_sort(board, filename, sort):
     # returns True if a board filename matches the request sort, False otherwise
     board = board.lower()
-    #if there's a sort, and the board has non-default sorts, and (in the case of medals) the sort isn't the default sort
-    if board == "medals" or board == "trophy":
-        if (sort and board == "trophy") or (sort and sort != "platinum" and board == "medals"):
-            if sort not in filename:
-                # and if we've set a different sort, discard any not containing that
-                return False
-        else:
-            if filename.count("_") > 1:
-                # if there's a suffix indicating board size_type, it's not plat
-                return False
-    return True
+
+    if board != "trophy" and board != "medals":
+        #all other board types only have one valid sort (since we separate Level and VXP)
+        return True
+    elif sort in filename:
+        #if the sort explicitly matches the file, use it
+        return True
+    elif not sort or (board == "medals" and sort == "platinum"):
+        #for default sorts, accept either no suffix or - in the case of medals - a platinum suffix
+        if filename.count("_") == 1 or (board == "medals" and "platinum" in filename):
+            return True
+
+    #if we get here we had a medal/trophy query, which either had an explicit sort that didn't match
+    #OR we had a default sort but the file had a non-default sort
+    return False
 
 #actual graphing happens below
 import matplotlib
@@ -100,7 +104,6 @@ def build_user_scores(user, board, sort_type = None):
     timestamps = []
     scores = []
     for filename in os.listdir(p):
-        #todo - this isn't working?
         if not validate_board_sort(board, filename, sort_type):
             continue
 
