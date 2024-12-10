@@ -286,8 +286,7 @@ def scrape_leaderboard(board_type, force, idx, sortParam = 0, ytd = False, gain 
 
 		#check position changes using the read file data
 		#we don't store positions for medal table non-default sorts, so exclude that
-		#TODO - we actually do store those positions now! add this functionality
-		if user_name in previous_update and not sortParam:
+		if user_name in previous_update:
 			user_data = previous_update[user_name]
 			pos_change = user_data['pos'] - (i+1)
 			score_change = score - user_data['score']
@@ -303,10 +302,7 @@ def scrape_leaderboard(board_type, force, idx, sortParam = 0, ytd = False, gain 
 			else:
 				pos_change_str = "▼"+str(abs(pos_change))+(" "*8)
 		else:
-			if sortParam:
-				pos_change_str = ""
-			else:
-				pos_change_str = ":new:"+(" "*8)
+			pos_change_str = ":new:"+(" "*8)
 			score_change = 0
 
 		#Starboard+Challenge+Level requires decimal formatting for output, Speedrun requires time
