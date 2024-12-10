@@ -212,7 +212,8 @@ def scrape_latest():
 #sort_param is applicable only when board_type="Medal" or board_type="Trophy", and represents what we sort by
 #for medals, sort_param 0 = plat, 1 = gold, 2 = silver, 3 = bronze
 #for trophies, sort_param 0 = points, 1 = plats, and 2-6 represent gold, silver, bronze, 4th, 5th
-def scrape_leaderboard(board_type, force, idx, sortParam = 0, ytd = False):
+#gain is set True if we want to order output by score_change instead of by score
+def scrape_leaderboard(board_type, force, idx, sortParam = 0, ytd = False, gain = False):
 	#get all the URL/filestructure names needed
 	scoreboard_names = cmfn.get_scoreboard_names(board_type, sortParam)
 	site_name = scoreboard_names['site_name']
@@ -226,6 +227,16 @@ def scrape_leaderboard(board_type, force, idx, sortParam = 0, ytd = False):
 	archive = "leaderboards/archive/" + file_name + "/"
 
 	previous_update = cmfn.get_leaderboard_from_disk(file_name, ytd)
+
+	#TODO - IMPLEMENT HANDLING OF GAIN
+	#first pass we don't want to allow any explicit gain period, and just go from start of calendar day
+	#we can add proper date range handling after that (as well as clean up ytd?)
+	#we may want to abstract all the logic for iterating over the soup
+	#so that two different functions are called based on whether or not gain is set
+	#perhaps generate_leaderboard(soup, previous_update) and generate_gains(soup, previous_update)
+	#either that or we can just use a single generic generate_board_data(soup) that outputs a JS object
+	#and easily generate the output with that object for either format
+	#instead of constructing it as we go for the current implementation
 
 	#perform web scrape
 	page = requests.get(URL, timeout=config.timeout)
@@ -263,64 +274,9 @@ def scrape_leaderboard(board_type, force, idx, sortParam = 0, ytd = False):
 
 		inc_level = None
 
-		#strip the text denoting the score size_type
-		#note that "scoreboardCSR" is actually the correct classname for arcade/solution
-		if board_type == "Starboard":
-			score_raw = player.find(class_="scoreboardCSR").get_text().strip()
-			score = float(score_raw.removesuffix(" CSR").replace(",",""))
-		elif board_type == "Medal":
-			medals = player.find_all(class_="medals")
-			score_raw = medals[sortParam].get_text().strip()
-			score = int(score_raw.replace(",",""))
-		elif board_type == "Trophy":
-			trophies = player.find_all(class_="medals")
-			score_raw = trophies[sortParam].get_text().strip()
-			score = int(score_raw.replace(",",""))
-		elif board_type == "Arcade":
-			score_raw = player.find(class_="scoreboardCSR").get_text().strip()
-			score = int(score_raw.removesuffix(" Tokens").replace(",",""))
-		elif board_type == "Solution":
-			score_raw = player.find(class_="scoreboardCSR").get_text().strip()
-			score = int(score_raw.removesuffix(" Brain Power").replace(",",""))
-		elif board_type == "Challenge":
-			score_raw = player.find(class_="scoreboardCSR").get_text().strip()
-			score = float(score_raw.removesuffix(" Style Points").replace(",",""))
-		elif board_type == "Collectible":
-			score_raw = player.find(class_="scoreboardCSR").get_text().strip()
-			score = int(score_raw.removesuffix(" Cyberstars").replace(",",""))
-		elif board_type == "Incremental":
-			#incremental is a bit odd as there's two important metrics
-			inc_scores = list(player.find_all(class_="scoreboardCSR"))
-			#for the incremental score we display "VXP" instead of "Versus XP"
-			#this is done solely due to embed size constraints
-			score_raw = inc_scores[0].get_text().strip().replace("Versus ","V")
-			score = int(score_raw.removesuffix(" VXP").replace(",",""))
-			inc_level_raw = inc_scores[1].contents[1].strip()
-			#level will never reach 1,000 so no comma replacement needed
-			#we also don't do any maths with it so don't need to store as int
-			inc_level = inc_level_raw.removeprefix("Level ")
-		elif board_type == "Level":
-			#for level, we want to actually get the raw CXP and reverse-engineer the level from that
-			#this allows us to display sub-integer changes
-			cxp_raw = list(player.find_all(class_="scoreboardCSR"))[1].contents[2].get_text()
-			cxp = float(cxp_raw.strip().replace(",","").replace("(","").replace(")","").removesuffix(" CXP"))
-			score = math.log(max([10, cxp])/10, 2.5) + 1 #a user with 0xp starts at level 1
-			score = round(score, 2) #round it to 2dp for display purposes
-			integer_level = math.floor(score)
-			decimal_level = round((score - integer_level) * 100)
-			score_raw = "Level " + str(integer_level) + " [" + str(decimal_level) + "%]"
-		elif board_type == "Rainbow":
-			score_raw = player.h2.get_text()
-			score = int(score_raw.removesuffix(" RP").replace(",",""))
-		elif board_type == "Submissions" or board_type == "Proof" or board_type == "Video":
-			score_raw = player.b.get_text()
-			score = int(score_raw.replace(",",""))
-		elif board_type == "Speedrun":
-			score_raw = player.find(class_="medals").get_text().strip()
-			score = cmfn.time_to_seconds(score_raw)
-		else:
-			print("ERROR: scoreboard board_type", board_type, "not valid")
-			return
+		player_data = get_scores_from_soup(board_type, player, sortParam)
+		score = player_data['score']
+		score_raw = player_data['score_raw']
 
 		#in some cases score_raw includes excess whitespace
 		#e.g., "382,193     Brain Power"
@@ -398,7 +354,7 @@ def scrape_leaderboard(board_type, force, idx, sortParam = 0, ytd = False):
 			output += score_raw+score_change_str
 			#if we're running the incremental scoreboard include level
 			if board_type == "Incremental":
-				output += " [L" + inc_level + "]"
+				output += " [L" + player_data['inc_level'] + "]"
 			output += "\n"
 
 		#and add it to the leaderboard .csv
@@ -588,3 +544,77 @@ def save_leaderboard(save_data, file):
 	file.write(save_data)
 	file.truncate()
 	return
+
+
+#this function takes in the board type we're scraping, and an HTML table row from BeautifulSoup
+#and returns a dict of important score values scraped out of that row
+#optionally sortParam may be passed in for medal/trophy for non-default sorts
+def get_scores_from_soup(board_type, player_row, sortParam = 0):
+	# strip the text denoting the score size_type
+	# note that "scoreboardCSR" is actually the correct classname for arcade/solution
+
+	#initialise player_data object so that we can populate board-specific fields
+	player_data = {}
+
+	if board_type == "Starboard":
+		score_raw = player_row.find(class_="scoreboardCSR").get_text().strip()
+		score = float(score_raw.removesuffix(" CSR").replace(",", ""))
+	elif board_type == "Medal":
+		medals = player_row.find_all(class_="medals")
+		score_raw = medals[sortParam].get_text().strip()
+		score = int(score_raw.replace(",", ""))
+	elif board_type == "Trophy":
+		trophies = player_row.find_all(class_="medals")
+		score_raw = trophies[sortParam].get_text().strip()
+		score = int(score_raw.replace(",", ""))
+	elif board_type == "Arcade":
+		score_raw = player_row.find(class_="scoreboardCSR").get_text().strip()
+		score = int(score_raw.removesuffix(" Tokens").replace(",", ""))
+	elif board_type == "Solution":
+		score_raw = player_row.find(class_="scoreboardCSR").get_text().strip()
+		score = int(score_raw.removesuffix(" Brain Power").replace(",", ""))
+	elif board_type == "Challenge":
+		score_raw = player_row.find(class_="scoreboardCSR").get_text().strip()
+		score = float(score_raw.removesuffix(" Style Points").replace(",", ""))
+	elif board_type == "Collectible":
+		score_raw = player_row.find(class_="scoreboardCSR").get_text().strip()
+		score = int(score_raw.removesuffix(" Cyberstars").replace(",", ""))
+	elif board_type == "Incremental":
+		# incremental is a bit odd as there's two important metrics
+		inc_scores = list(player_row.find_all(class_="scoreboardCSR"))
+		# for the incremental score we display "VXP" instead of "Versus XP"
+		# this is done solely due to embed size constraints
+		score_raw = inc_scores[0].get_text().strip().replace("Versus ", "V")
+		score = int(score_raw.removesuffix(" VXP").replace(",", ""))
+		inc_level_raw = inc_scores[1].contents[1].strip()
+		# level will never reach 1,000 so no comma replacement needed
+		# we also don't do any maths with it so don't need to store as int
+		player_data['inc_level'] = inc_level_raw.removeprefix("Level ")
+	elif board_type == "Level":
+		# for level, we want to actually get the raw CXP and reverse-engineer the level from that
+		# this allows us to display sub-integer changes
+		cxp_raw = list(player_row.find_all(class_="scoreboardCSR"))[1].contents[2].get_text()
+		cxp = float(cxp_raw.strip().replace(",", "").replace("(", "").replace(")", "").removesuffix(" CXP"))
+		score = math.log(max([10, cxp]) / 10, 2.5) + 1  # a user with 0xp starts at level 1
+		score = round(score, 2)  # round it to 2dp for display purposes
+		integer_level = math.floor(score)
+		decimal_level = round((score - integer_level) * 100)
+		score_raw = "Level " + str(integer_level) + " [" + str(decimal_level) + "%]"
+	elif board_type == "Rainbow":
+		score_raw = player_row.h2.get_text()
+		score = int(score_raw.removesuffix(" RP").replace(",", ""))
+	elif board_type == "Submissions" or board_type == "Proof" or board_type == "Video":
+		score_raw = player_row.b.get_text()
+		score = int(score_raw.replace(",", ""))
+	elif board_type == "Speedrun":
+		score_raw = player_row.find(class_="medals").get_text().strip()
+		score = cmfn.time_to_seconds(score_raw)
+	else:
+		print("ERROR: scoreboard board_type", board_type, "not valid")
+		return False
+
+	#populate the default fields
+	player_data['score_raw'] = score_raw
+	player_data['score'] = score
+	#and return the full player_data object
+	return player_data

@@ -154,7 +154,8 @@ async def scrape_leaderboards():
 #async def scrape_level_changes():
 #	channel = config.
 
-async def scrape_leaderboard(board_type, force = False, idx = 0, channel_id = config.leaderboard_channel, sort_param = 0, ytd = False, gain = False):
+async def scrape_leaderboard(board_type, force = False, idx = 0, channel_id = config.leaderboard_channel,
+							 sort_param = 0, ytd = False, gain = False):
 	#PARAMS:
 	#board_type - the leaderboard size_type to scrape, e.g., "arcade"
 	#force - whether to force an update to #leaderboards, used only for manually fixing errors
@@ -166,7 +167,7 @@ async def scrape_leaderboard(board_type, force = False, idx = 0, channel_id = co
 
 	channel = client.get_channel(channel_id)
 
-	results = scrape.scrape_leaderboard(board_type, force, idx, sort_param, ytd)
+	results = scrape.scrape_leaderboard(board_type, force, idx, sort_param, ytd, gain)
 	#result should be a pure string
 	print(results)
 	if board_type == "Medal":
@@ -254,8 +255,8 @@ async def profile_stats(message):
 	else:
 		username = args[1]
 
-	sub_milestones = [25,50,100,250,500,1000,2500,5000,10000,25000,50000,100000]
-	leadership_awards = [100,10,3,2,1]
+	#sub_milestones = [25,50,100,250,500,1000,2500,5000,10000,25000,50000,100000]
+	#leadership_awards = [100,10,3,2,1]
 	user_data = scrape.scrape_profile(username)
 
 	#fail if user wasn't found
@@ -395,7 +396,7 @@ async def handle_generic_leaderboard(message, board_type):
 		sortParam = cmfn.get_sort_param(board_type, args)
 
 	print("Scraping " + board_type + " leaderboard with idx " + str(idx) + " and sort_param " + str(sortParam))
-	await scrape_leaderboard(board_type, True, idx, message.channel.id, sortParam, ytd)
+	await scrape_leaderboard(board_type, True, idx, message.channel.id, sortParam, ytd, gain)
 
 async def handle_submitters(message, board_type): #board_type is either "user" or "game"
 	days = 1 #default
@@ -459,7 +460,7 @@ async def handle_chart_challenge(message):
 
 	#and post to Discord
 	channel = client.get_channel(message.channel.id)
-	print_chart_challenge(idx, month, channel)
+	await print_chart_challenge(idx, month, channel)
 
 
 async def print_chart_challenge(idx, month, channel):
