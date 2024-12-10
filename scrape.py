@@ -226,7 +226,7 @@ def scrape_leaderboard(board_type, force, idx, sortParam = 0, ytd = False, gain 
 		URL += "?manual_sort=" + sort_type
 	archive = "leaderboards/archive/" + file_name + "/"
 
-	previous_update = cmfn.get_leaderboard_from_disk(file_name, ytd)
+	previous_update = cmfn.get_leaderboard_from_disk(file_name, ytd, sort_type)
 
 	#TODO - IMPLEMENT HANDLING OF GAIN
 	#first pass we don't want to allow any explicit gain period, and just go from start of calendar day
@@ -285,8 +285,7 @@ def scrape_leaderboard(board_type, force, idx, sortParam = 0, ytd = False, gain 
 		score_raw = ' '.join(score_raw.split())
 
 		#check position changes using the read file data
-		#we don't store positions for medal table non-default sorts, so exclude that
-		if user_name in previous_update:
+		if previous_update and user_name in previous_update:
 			user_data = previous_update[user_name]
 			pos_change = user_data['pos'] - (i+1)
 			score_change = score - user_data['score']

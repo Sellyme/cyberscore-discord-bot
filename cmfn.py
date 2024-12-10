@@ -50,7 +50,26 @@ def get_file_by_year(year, file_dir):
 
 	#sort all the files and take the last alphabetically (which will be the closest to the end of year)
 	req_file = sorted(files, reverse=True)[0]
-	#print("DEBUG: pulling file ", req_file)
+	return req_file
+
+def get_file_by_sort(sort_type, file_dir):
+	#takes an input sort parameter, and finds the most recent file in a directory matching that sort
+	#this assumes all files in the directory have their yyyy-mm-dd timestamp as a filename prefix
+	#and additionally that files have a `_suffix` in their name indicating their sort parameter
+	#this function never gets called for default sortParams, so we can ignore any file without that suffix
+
+	files = []
+	for filename in os.listdir(file_dir):
+		if sort_type in filename:
+			files.append(filename)
+
+	#if there's no files, error out
+	if len(files) == 0:
+		print("ERROR: no files found in dir '" + file_dir + "' matching requested sort '" + sort_type + "'")
+		return False
+
+	#sort all the files and take the last alphabetically (which will be the most recent)
+	req_file = sorted(files, reverse=True)[0]
 	return req_file
 
 def get_sort_param(board_type, args):
@@ -215,15 +234,22 @@ def get_scoreboard_names(board_type, sortParam = 0):
 		'sort_type': sort_type,
 	}
 
-def get_leaderboard_from_disk(file_name, ytd = False):
-	#parses and returns a leaderboard of the specified size_type from a certain date.
+def get_leaderboard_from_disk(file_name, ytd = False, sort_type = ""):
+	#parses and returns a leaderboard of the specified type from a certain date.
 	#date can be specified by optional parameters (many potential ones unimplemented)
-	#but is by default the most recent *daily* leaderboard update available
+	#but is by default the most recent *daily* leaderboard update available for default sorts
+	#and the most recent leaderboard update (auto or manual) for non-default sorts
 
-	#if the ytd flag is set, load the *final* update from the previous calendar year
-	if ytd:
-		#get current year and subtract one
-		req_year = int(datetime.now().strftime('%Y')) - 1
+	if (not sort_type or (sort_type == "platinum" and file_name == "medals")) and not ytd:
+		#if we're loading the most recent file of a default sort, just pull the cached csv
+		latest = open("leaderboards/"+file_name+".csv", "r+")
+		result = load_leaderboard(latest)
+	elif ytd: #load most recent update from previous year to get gains made in this year
+		#ytd does not support non-default sorts, as we don't guarantee a year-end scrape for those
+		#if someone requests a ytd non-default sort it will error if no update exists for the prior year
+		#and will just give over-estimatated results if an update did exist
+		#(since the latest update from the previous year was likely well before year end)
+		req_year = int(datetime.now().strftime('%Y')) - 1 #one before current year
 		#build a list of all files from the requested year
 		location = "leaderboards/archive/"+file_name+"/"
 		req_file = get_file_by_year(req_year, location)
@@ -231,9 +257,13 @@ def get_leaderboard_from_disk(file_name, ytd = False):
 			return False
 		last_year = open(location+req_file, "r+")
 		result = load_leaderboard(last_year)
-	else: #otherwise, load the most recently saved file
-		latest = open("leaderboards/"+file_name+".csv", "r+")
-		result = load_leaderboard(latest)
+	elif sort_type:
+		location = "leaderboards/archive/"+file_name+"/"
+		req_file = get_file_by_sort(sort_type, location)
+		if not req_file:
+			return False
+		last_file = open(location+req_file, "r+")
+		result = load_leaderboard(last_file)
 
 	return result
 
