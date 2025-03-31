@@ -138,9 +138,9 @@ def scrape_latest():
 
 		cs_results.append(output)
 		#if this is for New Pokemon Snap, output to that as well
-		if game_link == "/game/2785":
+		if game_link == "/game/2785" or game_link == "/games/2785":
 			ps_results.append(output)
-		elif game_link == "/game/2006": #if it's for PoGo, check for and announce rare scores
+		elif game_link == "/game/2006" or game_link == "/games/2006": #if it's for PoGo, check for and announce rare scores
 			skip = False
 			size_type = None
 			polarity = None
