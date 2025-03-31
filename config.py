@@ -9,7 +9,7 @@ ps_server_id = 671836713236299826
 
 #all frequencies are in seconds
 submissions_frequency = 120 #frequency to scrape the latest submissions page
-leaderboard_frequency = 60*60 #frequency to scrape the CSR leaderboard
+leaderboard_frequency = 60*60 #frequency to scrape the global leaderboards
 timeout = 60 #number of seconds to wait for page load before abandoning an update
 #leaderboard_frequency polls every hour
 #but waits until midnight UTC (or 24 hours since the last update) before updating
