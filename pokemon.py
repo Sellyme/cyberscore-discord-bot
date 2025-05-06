@@ -299,7 +299,8 @@ def get_bounds(mon):
 	if((bounds[0]*bounds[1][1]) - (bounds[0]*bounds[1][0]) < 0.01):
 		true_min = math.floor(bounds[0]*bounds[1][0]*100) / 100.0
 	else:
-		true_min = round(bounds[0]*bounds[1][0], 2)
+		#round it very mildly to clear accrued floating point errors rounding properly to 1cm
+		true_min = round(round(bounds[0]*bounds[1][0], 6),2)
 	output += create_size_cell(true_min, cell_width)
 	#XXS
 	output += create_size_cell(bounds[0]*bounds[1][1], cell_width)
