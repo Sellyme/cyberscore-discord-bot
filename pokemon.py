@@ -214,6 +214,10 @@ def get_dex_height(mon):
 	else:
 		return False
 
+def get_dex_heights(mon):
+	bounds = get_class_boundaries(mon)
+
+
 #takes in a height from the game master and calculates the variate for that mon, rounding off fp errors
 def rounded_variate(height, dex_height):
 	return round(height/dex_height,5)
@@ -255,11 +259,117 @@ def get_class_boundaries(mon):
 def get_bounds(mon):
 	mon = format_name(mon)
 	bounds = get_class_boundaries(mon)
+
+	output = "```\n"
+	max_height = bounds[0]*bounds[1][5]
+	max_height_length = len(format_size(max_height))
+	cell_width = max_height_length
+	#if cell-width is even, the headers look like shit
+	if cell_width % 2 == 0:
+		cell_width += 1
+
+	#The box comprises 6 columns
+	#The first column is for labels and contains either " Heights " or " Weights " (9 chars)
+	#Each subsequent column is "|" followed by a cell of cell_width size
+	#We don't count the outer |s since we manually print corners anyway
+	box_width = 9 + (5 * (cell_width+1))
+	output += "┏" + "━"*box_width + "┓\n"
+
+	#print box header
+	header = "Heights for " + mon
+	h_spaces = (box_width - len(header)) / 2
+	#we round h_spaces down for the leading spaces and then up for the second
+	#this way if it wasn't an integer, the extra space is always trailing
+	output += "┃" + " "*math.floor(h_spaces) + header + " "*math.ceil(h_spaces) + "┃\n"
+	output += "┣" + "━"*9 #start of header lower border
+	output += 5*("┳" + "━"*cell_width) + "┫\n"
+
+	#print class headers
+	output += "┃" + 9*" " + "┃"
+	c_spaces = " "*int((cell_width - 3) / 2) #this is always an integer even before the cast
+	output += c_spaces + "MIN" + c_spaces + "┃"
+	output += c_spaces + "XXS" + c_spaces + "┃"
+	output += c_spaces + "DEX" + c_spaces + "┃"
+	output += c_spaces + "XXL" + c_spaces + "┃"
+	output += c_spaces + "MAX" + c_spaces + "┃\n"
+
+	#print Heights row
+	output += "┃ Heights "
+	#MIN
+	if((bounds[0]*bounds[1][1]) - (bounds[0]*bounds[1][0]) < 0.01):
+		true_min = math.floor(bounds[0]*bounds[1][0]*100) / 100.0
+	else:
+		true_min = round(bounds[0]*bounds[1][0], 2)
+	output += create_size_cell(true_min, cell_width)
+	#XXS
+	output += create_size_cell(bounds[0]*bounds[1][1], cell_width)
+	#DEX
+	output += create_size_cell(bounds[0], cell_width)
+	#XXL
+	output += create_size_cell(bounds[0]*bounds[1][4], cell_width)
+	#MAX
+	output += create_size_cell(max_height, cell_width)
+	output += "┃\n"
+
+	output += "┃ Odds    "
+	min_odds = get_height_chance(mon, true_min+0.01)
+	output += create_odds_cell(min_odds[1], cell_width)
+	output += create_odds_cell(1/250, cell_width)
+	output += create_odds_cell(False, cell_width)
+	output += create_odds_cell(1/250, cell_width)
+	max_odds = get_height_chance(mon, bounds[0]*bounds[1][5] - 0.01)
+	output += create_odds_cell(max_odds[1], cell_width)
+	output += "┃\n"
+	#footer
+	output += "┗" + "━"*9
+	output += 5*("┻" + "━"*cell_width) + "┛\n"
+	output += "```"
+
 	print("XXL class: %.2f" % (bounds[1][5]))
 	print("XXS Min: %.4f" % (bounds[0]*bounds[1][0]))
 	print("XXS Max: %.4f" % (bounds[0]*bounds[1][1]))
+	print("DEX: %.2f" % bounds[0])
 	print("XXL Min: %.4f" % (bounds[0]*bounds[1][4]))
 	print("XXL Max: %.4f" % (bounds[0]*bounds[1][5]))
+
+	return output
+
+def create_size_cell(size_float, cell_width):
+	size_str = format_size(size_float)
+	return "┃" + " "*(cell_width - len(size_str)) + size_str
+
+def format_size(size_float):
+	return f'{size_float:.2f}m '
+
+def create_odds_cell(odds_float, cell_width):
+	if odds_float:
+		odds_str = format_odds(odds_float)
+	else:
+		odds_str = "—"
+	spaces_req = (cell_width - len(odds_str)) / 2.0
+	return "┃" + " "*math.ceil(spaces_req) + odds_str + " "*math.floor(spaces_req)
+
+def format_odds(odds_float):
+	#odds float is a number between 0.00 and 1.00
+	frac = 1/odds_float
+
+	magnitude = 0
+	while frac >= 1000:
+		magnitude += 1
+		frac /= 1000.0
+	#if frac is <10 we want to print e.g., 2.6
+	#if it's >=10 we want just 26 or 273
+	if frac < 10:
+		dec = 1
+	else:
+		dec = 0
+
+	if magnitude > 5:
+		#this means less than 1 in 1000 quadrillion
+		return "LOTS"
+
+	f_str = '1/{:.'+str(dec)+'f}{} '
+	return f_str.format(frac, ['', 'k', 'm', 'b', 't', 'q'][magnitude])
 
 #returns an array containing two elements:
 #first element is either negative (lowest wins) or positive (highest wins)

@@ -521,8 +521,7 @@ async def get_pokemon_dex(message):
 		output = str(weight)+" kg" if weight else weight
 	elif params.startswith("height"):
 		mon = pokemon.format_name(params.removeprefix("height").strip())
-		height = pokemon.get_dex_height(mon)
-		output = str(height)+" m" if height else height
+		output = pokemon.get_bounds(mon)
 	else:
 		return await report_error(message.channel.id, "Cannot understand parameters given. Please enter first the dex field you are requesting and then the Pokemon name, e.g., `!dex size_type Pidgey`")
 
