@@ -45,7 +45,10 @@ def get_game_master():
 			if 'forms' in formSettings and formSettings['forms'][0] != {}:
 				#if this Pokemon has a form list, iterate through them all
 				for form in formSettings['forms']:
-					if 'isCostume' in form and form['isCostume']:
+					if not isinstance(form['form'], str):
+						print("Error: Invalid form",form['form'],"found for",pokemon_name)
+						continue
+					elif 'isCostume' in form and form['isCostume']:
 						#ignore costume mons
 						continue
 					elif "COPY_2019" in form['form'] :
@@ -58,6 +61,7 @@ def get_game_master():
 
 			pokemon_forms_by_id[pokemon_id] = form_list
 			pokemon_forms_by_name[pokemon_name] = form_list
+			#print("Loaded forms for", pokemon_name) #DEBUG
 
 		#hardcode in Nidoran (and any other common mistakes?) for !forms handling
 		pokemon_forms_by_name["NIDORAN"] = ["NIDORAN_F", "NIDORAN_M"]
@@ -83,6 +87,7 @@ def get_game_master():
 
 			if pokemon_name in pokemon_forms_by_id[pokemon_id]:
 				pokemon_templates[pokemon_name] = template
+				#print("Loaded template for", pokemon_name) #DEBUG
 
 	print("Templates built. Loading sizes")
 	#we've built the template list, now we do another loop to add extended size data
@@ -105,6 +110,7 @@ def get_game_master():
 					pokemon_name = "NIDORAN_M"
 
 			gm_sizes = template['data']['pokemonExtendedSettings']['sizeSettings']
+			#print("Loaded sizes for", pokemon_name) #DEBUG
 			if pokemon_name in pokemon_templates:
 				pokemon_templates[pokemon_name]['sizeclasses'] = convert_gm_sizes(gm_sizes)
 			else:
