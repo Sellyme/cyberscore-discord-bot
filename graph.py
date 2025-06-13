@@ -97,7 +97,8 @@ import numpy as np
 
 from datetime import datetime
 
-matplotlib.use("TkAgg") #this fixes rendering in PyCharm
+if "PYCHARM_HOSTED" in os.environ:
+    matplotlib.use("TkAgg") #this fixes rendering in PyCharm
 
 def build_user_scores(user, board, sort_type = None):
     p = "leaderboards/archive/" + board + "/"
