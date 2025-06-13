@@ -47,7 +47,12 @@ def get_game_master():
 				for form in formSettings['forms']:
 					if not isinstance(form['form'], str):
 						print("Error: Invalid form",form['form'],"found for",pokemon_name)
-						continue
+
+						#Falinks' base form appears to error out due to being an integer, so correct that
+						if form['form'] == 2325 and pokemon_name == "FALINKS":
+							form_list.append("FALINKS")
+						else:
+							continue
 					elif 'isCostume' in form and form['isCostume']:
 						#ignore costume mons
 						continue
