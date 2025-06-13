@@ -4,7 +4,7 @@ import cmfn
 def generate_lead_progression(board, sort="plat"):  # WIP
     p = "leaderboards/archive/" + board + "/"
     leads = []
-    for filename in os.listdir(p):
+    for filename in sorted(os.listdir(p)):
         if not validate_board_sort(board, filename, sort):
             continue
 
@@ -36,7 +36,7 @@ def generate_top_n(n, board, sort=None):  # WIP
     lb_entries = {}
     users = set()
 
-    for filename in os.listdir(p):
+    for filename in sorted(os.listdir(p)):
         if not validate_board_sort(board, filename, sort):
             continue
 
@@ -104,7 +104,7 @@ def build_user_scores(user, board, sort_type = None):
     p = "leaderboards/archive/" + board + "/"
     timestamps = []
     scores = []
-    for filename in os.listdir(p):
+    for filename in sorted(os.listdir(p)):
         if not validate_board_sort(board, filename, sort_type):
             continue
 
