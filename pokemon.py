@@ -47,7 +47,12 @@ def get_game_master():
 				for form in formSettings['forms']:
 					if not isinstance(form['form'], str):
 						print("Error: Invalid form",form['form'],"found for",pokemon_name)
-						continue
+
+						#Falinks' base form appears to error out due to being an integer, so correct that
+						if form['form'] == 2325 and pokemon_name == "FALINKS":
+							form_list.append("FALINKS")
+						else:
+							continue
 					elif 'isCostume' in form and form['isCostume']:
 						#ignore costume mons
 						continue
@@ -1014,7 +1019,7 @@ def load_all_charts():
 
 def load_charts_from_disk():
 	global processed_charts
-	path = "D:/Programming/Cyberscore/Discord bot/chart_jsons/"
+	path = "data/chart_jsons/"
 	l = listdir(path)
 	files = [f for f in l if isfile(join(path, f))]
 	print("Loading",len(files),"charts")
@@ -1126,7 +1131,7 @@ def download_chart(chart_data):
 	page = requests.get(chart_data['chart_url']['json'])
 	chart = json.loads(page.content)
 	#todo – change this path when set up properly
-	local_path = "D:/Programming/Cyberscore/Discord bot/chart_jsons/" + str(chart_data['chart_id']) + ".json"
+	local_path = "data/chart_jsons/" + str(chart_data['chart_id']) + ".json"
 	with open(local_path, "w+") as f:
 		json.dump(chart, f)
 	return chart

@@ -83,8 +83,8 @@ async def scrape_latest():
 async def scrape_leaderboards():
 	while True:
 		try:
-			f = open("last_leaderboards", "r+")
-			last_scrape = f.read()
+			f = open("data/last_leaderboards", "r+")
+			last_scrape = f.read().strip()
 			last_scrape_dt = datetime.strptime(last_scrape, "%Y-%m-%d %H:%M:%S")
 			last_scrape_dt = last_scrape_dt.replace(tzinfo=timezone.utc) #force a timezone-aware datetime
 			lock_scrape = last_scrape_dt + timedelta(0.1)
@@ -601,12 +601,12 @@ async def handle_lead_graph(message):
 
 	channel = client.get_channel(message.channel.id)
 	#create the discord File
-	with open("graphs/"+graph_name, 'rb') as f:
+	with open("data/graphs/"+graph_name, 'rb') as f:
 		picture = discord.File(f)
 		await channel.send(file=picture)
 
 	try:
-		os.remove("graphs/"+graph_name)
+		os.remove("data/graphs/"+graph_name)
 	except:
 		print("Error removing graph", graph_name)
 
@@ -619,12 +619,12 @@ async def handle_user_graph(message):
 
 	channel = client.get_channel(message.channel.id)
 	# create the discord File
-	with open("graphs/" + graph_name, 'rb') as f:
+	with open("data/graphs/" + graph_name, 'rb') as f:
 		picture = discord.File(f)
 		await channel.send(file=picture)
 
 	try:
-		os.remove("graphs/" + graph_name)
+		os.remove("data/graphs/" + graph_name)
 	except:
 		print("Error removing graph", graph_name)
 
