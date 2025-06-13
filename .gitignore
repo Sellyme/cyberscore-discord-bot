@@ -9,3 +9,4 @@ leaderboards/cyberscore-leaderboards*
 leaderboards/archive/*
 leaderboards/*.csv
 /qodana.yaml
+/data

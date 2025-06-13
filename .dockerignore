@@ -1,0 +1,14 @@
+.git
+.idea
+data
+
+.dockerignore
+.env
+.gitignore
+Dockerfile
+
+__pycache__
+chart_jsons
+pogo_game_master.json
+*.bak
+qodana.yaml
