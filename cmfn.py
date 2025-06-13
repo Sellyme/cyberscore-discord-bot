@@ -242,7 +242,7 @@ def get_leaderboard_from_disk(file_name, ytd = False, sort_type = ""):
 
 	if (not sort_type or (sort_type == "platinum" and file_name == "medals")) and not ytd:
 		#if we're loading the most recent file of a default sort, just pull the cached csv
-		latest = open("leaderboards/"+file_name+".csv", "r+")
+		latest = open("data/leaderboards/"+file_name+".csv", "r+")
 		result = load_leaderboard(latest)
 	elif ytd: #load most recent update from previous year to get gains made in this year
 		#ytd does not support non-default sorts, as we don't guarantee a year-end scrape for those
@@ -251,14 +251,14 @@ def get_leaderboard_from_disk(file_name, ytd = False, sort_type = ""):
 		#(since the latest update from the previous year was likely well before year end)
 		req_year = int(datetime.now().strftime('%Y')) - 1 #one before current year
 		#build a list of all files from the requested year
-		location = "leaderboards/archive/"+file_name+"/"
+		location = "data/leaderboards/archive/"+file_name+"/"
 		req_file = get_file_by_year(req_year, location)
 		if not req_file:
 			return False
 		last_year = open(location+req_file, "r+")
 		result = load_leaderboard(last_year)
 	elif sort_type:
-		location = "leaderboards/archive/"+file_name+"/"
+		location = "data/leaderboards/archive/"+file_name+"/"
 		req_file = get_file_by_sort(sort_type, location)
 		if not req_file:
 			return False

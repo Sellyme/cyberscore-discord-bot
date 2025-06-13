@@ -2,9 +2,7 @@
 <module type="PYTHON_MODULE" version="4">
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
-      <excludeFolder url="file://$MODULE_DIR$/chart_jsons" />
-      <excludeFolder url="file://$MODULE_DIR$/leaderboards" />
-      <excludeFolder url="file://$MODULE_DIR$/graphs" />
+      <excludeFolder url="file://$MODULE_DIR$/data" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

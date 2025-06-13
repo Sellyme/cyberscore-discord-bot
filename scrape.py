@@ -20,7 +20,7 @@ def scrape_latest():
 	soup = BeautifulSoup(page.content, "html.parser")
 
 	#load in the last update time
-	f = open("last_update", "r+")
+	f = open("data/last_update", "r+")
 	last_update = f.read().strip()
 	new_update = "0"
 
@@ -224,7 +224,7 @@ def scrape_leaderboard(board_type, force, idx, sortParam = 0, ytd = False, gain 
 	URL = "https://cyberscore.me.uk/scoreboards/" + site_name
 	if sort_type:
 		URL += "?manual_sort=" + sort_type
-	archive = "leaderboards/archive/" + file_name + "/"
+	archive = "data/leaderboards/archive/" + file_name + "/"
 
 	previous_update = cmfn.get_leaderboard_from_disk(file_name, ytd, sort_type)
 
@@ -370,7 +370,7 @@ def scrape_leaderboard(board_type, force, idx, sortParam = 0, ytd = False, gain 
 	#so we have a ~midnight UTC point of comparison for the score diffs each day
 	#we also avoid saving if we did a medal table scrape with a non-default sort
 	if not force and not sortParam: #adjust this to force-overwrite
-		f = open("leaderboards/" + file_name + ".csv", "r+")
+		f = open("data/leaderboards/" + file_name + ".csv", "r+")
 		save_leaderboard(save_data, f)
 		f.close()
 
