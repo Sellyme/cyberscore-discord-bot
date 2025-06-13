@@ -21,7 +21,7 @@ def scrape_latest():
 
 	#load in the last update time
 	f = open("last_update", "r+")
-	last_update = f.read()
+	last_update = f.read().strip()
 	new_update = "0"
 
 	table = soup.find(id="latest_records_table")

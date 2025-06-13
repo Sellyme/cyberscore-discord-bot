@@ -84,7 +84,7 @@ async def scrape_leaderboards():
 	while True:
 		try:
 			f = open("last_leaderboards", "r+")
-			last_scrape = f.read()
+			last_scrape = f.read().strip()
 			last_scrape_dt = datetime.strptime(last_scrape, "%Y-%m-%d %H:%M:%S")
 			last_scrape_dt = last_scrape_dt.replace(tzinfo=timezone.utc) #force a timezone-aware datetime
 			lock_scrape = last_scrape_dt + timedelta(0.1)

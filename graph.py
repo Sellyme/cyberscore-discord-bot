@@ -2,7 +2,7 @@ import os
 import cmfn
 
 def generate_lead_progression(board, sort="plat"):  # WIP
-    p = "D:/Programming/Cyberscore/Discord bot/leaderboards/archive/" + board + "/"
+    p = "leaderboards/archive/" + board + "/"
     leads = []
     for filename in os.listdir(p):
         if not validate_board_sort(board, filename, sort):
@@ -32,7 +32,7 @@ def generate_top_n(n, board, sort=None):  # WIP
     # so we need to specify which to use
     # TODO - actually look into if trophy sort is working correctly?
 
-    p = "D:/Programming/Cyberscore/Discord bot/leaderboards/archive/" + board + "/"
+    p = "leaderboards/archive/" + board + "/"
     lb_entries = {}
     users = set()
 
@@ -100,7 +100,7 @@ from datetime import datetime
 matplotlib.use("TkAgg") #this fixes rendering in PyCharm
 
 def build_user_scores(user, board, sort_type = None):
-    p = "D:/Programming/Cyberscore/Discord bot/leaderboards/archive/" + board + "/"
+    p = "leaderboards/archive/" + board + "/"
     timestamps = []
     scores = []
     for filename in os.listdir(p):
