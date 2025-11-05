@@ -581,14 +581,14 @@ def get_scores_from_soup(board_type, player_row, sortParam = 0):
 		# this is done solely due to embed size constraints
 		score_raw = inc_scores[0].get_text().strip().replace("Versus ", "V")
 		score = int(score_raw.removesuffix(" VXP").replace(",", ""))
-		inc_level_raw = inc_scores[1].contents[1].strip()
+		inc_level_raw = inc_scores[1].contents[4].strip()
 		# level will never reach 1,000 so no comma replacement needed
 		# we also don't do any maths with it so don't need to store as int
 		player_data['inc_level'] = inc_level_raw.removeprefix("Level ")
 	elif board_type == "Level":
 		# for level, we want to actually get the raw CXP and reverse-engineer the level from that
 		# this allows us to display sub-integer changes
-		cxp_raw = list(player_row.find_all(class_="scoreboardCSR"))[1].contents[2].get_text()
+		cxp_raw = list(player_row.find_all(class_="scoreboardCSR"))[1].contents[5].get_text()
 		cxp = float(cxp_raw.strip().replace(",", "").replace("(", "").replace(")", "").removesuffix(" CXP"))
 		score = math.log(max([10, cxp]) / 10, 2.5) + 1  # a user with 0xp starts at level 1
 		score = round(score, 2)  # round it to 2dp for display purposes
