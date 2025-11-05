@@ -10,3 +10,7 @@ leaderboards/archive/*
 leaderboards/*.csv
 /qodana.yaml
 /data
+/assorted scripts
+last_*
+/pokemon_scripts
+graph examples.xlsx
