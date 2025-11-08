@@ -7,6 +7,7 @@ import asyncio #allow multiple threads
 import inflect #used for converting integers to ordinal positions
 import re, math
 import traceback
+import signal
 
 import scrape, config, pokemon, graph, cmfn #custom imports
 
@@ -647,6 +648,10 @@ async def report_error(channel_id, message):
 
 #allow running the bot in IDLE or PyCharm for testing/utility funcs without actually connecting to Discord
 if 'idlelib.run' not in sys.modules and "PYCHARM_HOSTED" not in os.environ:
+	def sigterm(signum, frame):
+		exit(0)
+
+	signal.signal(signal.SIGTERM, sigterm)
 	client.run(TOKEN)
 else:
 	pokemon.get_game_master()
