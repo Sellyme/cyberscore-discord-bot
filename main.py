@@ -8,6 +8,7 @@ import inflect #used for converting integers to ordinal positions
 import re, math
 import traceback
 import signal
+import sentry_sdk
 
 import scrape, config, pokemon, graph, cmfn #custom imports
 
