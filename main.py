@@ -108,13 +108,13 @@ async def scrape_leaderboards():
 				challenge_change = await scrape_leaderboard("Challenge")
 				collection_change = await scrape_leaderboard("Collectible")
 				incremental_change = await scrape_leaderboard("Incremental")
-				speedrun_change = await scrape_leaderboard("Speedrun")
+				#speedrun_change = await scrape_leaderboard("Speedrun")
 				proof_change = await scrape_leaderboard("Proof")
 				video_change = await scrape_leaderboard("Video")
 				
 				top10_change = starboard_change or medal_change or trophy_change or rainbow_change or arcade_change \
 							   or solution_change or challenge_change or collection_change or proof_change \
-							   or video_change or speedrun_change or incremental_change
+							   or video_change or incremental_change
 
 				#and then also run the remaining leaderboards
 				await scrape_leaderboard("Level")
@@ -342,7 +342,8 @@ async def on_message(message):
 	elif message.content.startswith("!level") or message.content.startswith("!cxp"):
 		await handle_generic_leaderboard(message, "Level")
 	elif message.content.startswith("!speedrun") or message.content.startswith("!time") or message.content.startswith("!sr"):
-		await handle_generic_leaderboard(message, "Speedrun")
+		#Speedrun is disabled
+		await report_error(message.channel, "The speedrun leaderboard has been deprecated.")
 	elif message.content.startswith("!proof"):
 		await handle_generic_leaderboard(message, "Proof")
 	elif message.content.startswith("!vid") or message.content.startswith("!vp"):

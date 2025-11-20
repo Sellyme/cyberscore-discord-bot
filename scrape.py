@@ -251,7 +251,7 @@ def scrape_leaderboard(board_type, force, idx, sortParam = 0, ytd = False, gain 
 
 		#Some boards have a header, so strip that
 		if (board_type == "Rainbow" or board_type == "Submissions" or board_type == "Incremental"
-				or board_type == "Proof" or board_type == "Video" or board_type == "Speedrun" or board_type == "Level"
+				or board_type == "Proof" or board_type == "Video" or board_type == "Level"
 				or board_type == "Medal" or board_type == "Trophy"):
 			players.pop(0)
 	else:
@@ -304,7 +304,7 @@ def scrape_leaderboard(board_type, force, idx, sortParam = 0, ytd = False, gain 
 			pos_change_str = ":new:"+(" "*8)
 			score_change = 0
 
-		#Starboard+Challenge+Level requires decimal formatting for output, Speedrun requires time
+		#Starboard+Challenge+Level requires decimal formatting for output
 		#other boards are integers
 		score_change_str = "" #default
 		if board_type == "Starboard":
@@ -315,15 +315,6 @@ def scrape_leaderboard(board_type, force, idx, sortParam = 0, ytd = False, gain 
 			score_str = "{:,.1f}".format(score)
 			if score_change:
 				score_change_str = " ({:+,.1f})".format(score_change)
-		elif board_type == "Speedrun":
-			score_str = cmfn.seconds_to_time(score)
-			if score_change:
-				symbol = ""
-				if score_change > 0:
-					symbol = "+"
-				elif score_change < 0:
-					symbol = "-"
-				score_change_str = " ("+symbol+cmfn.seconds_to_time(score_change)+")"
 		elif board_type == "Level":
 			score_str = "{:,.2f}".format(score)
 			if score_change:
@@ -353,10 +344,7 @@ def scrape_leaderboard(board_type, force, idx, sortParam = 0, ytd = False, gain 
 			output += "\n"
 
 		#and add it to the leaderboard .csv
-		if board_type == "Speedrun":
-			save_data += str(i+1) + "," + user_name + "," + str(score) + "\n"
-		else:
-			save_data += str(i+1) + "," + user_name + "," + score_str.replace(",","") + "\n"
+		save_data += str(i+1) + "," + user_name + "," + score_str.replace(",","") + "\n"
 
 	#save the data to the archive files every time someone does an update
 	curr_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -451,7 +439,6 @@ def scrape_profile(username):
 		"records": {
 			"total":user['sub_counts']['total'],
 			"medal":user['sub_counts']['ranked'],
-			"speedrun":user['sub_counts']['speedrun'],
 			"solution":user['sub_counts']['solution'],
 			"unranked":user['sub_counts']['unranked'],
 			"collectible":0, #not supported by API yet
@@ -462,7 +449,6 @@ def scrape_profile(username):
 		"proofs": {
 			"total":user['proof_counts']['total'],
 			"medal":user['proof_counts']['ranked'],
-			"speedrun":user['proof_counts']['speedrun'],
 			"solution":user['proof_counts']['solution'],
 			"unranked":user['proof_counts']['unranked'],
 			"collectible":0, #not supported by API yet
@@ -473,7 +459,6 @@ def scrape_profile(username):
 		"video proofs": {
 			"total":user['video_proof_counts']['total'],
 			"medal":user['video_proof_counts']['ranked'],
-			"speedrun":user['video_proof_counts']['speedrun'],
 			"solution":user['video_proof_counts']['solution'],
 			"unranked":user['video_proof_counts']['unranked'],
 			"collectible":0, #not supported by API yet
@@ -487,7 +472,6 @@ def scrape_profile(username):
 			"trophy":user['positions']['trophy_pos'],
 			"rainbow":rainbow_pos,
 			"arcade":user['positions']['arcade_pos'],
-			"speedrun":user['positions']['speedrun_pos'],
 			"solution":user['positions']['solution_pos'],
 			"challenge":user['positions']['challenge_pos'],
 			"collectible":user['positions']['collectible_pos'],
@@ -601,9 +585,6 @@ def get_scores_from_soup(board_type, player_row, sortParam = 0):
 	elif board_type == "Submissions" or board_type == "Proof" or board_type == "Video":
 		score_raw = player_row.b.get_text()
 		score = int(score_raw.replace(",", ""))
-	elif board_type == "Speedrun":
-		score_raw = player_row.find(class_="medals").get_text().strip()
-		score = cmfn.time_to_seconds(score_raw)
 	else:
 		print("ERROR: scoreboard board_type", board_type, "not valid")
 		return False
