@@ -644,7 +644,7 @@ async def debug(message):
 			await scrape_leaderboard(forceParam)
 		if debugParam.lower().startswith("ping"):
 			await direct_output(message.channel, "pong")
-		else if debugParam.lower() == "syn"):
+		else if debugParam.lower() == "syn":
 			await direct_output(message.channel, "ACK")
 
 
