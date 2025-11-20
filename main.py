@@ -21,12 +21,14 @@ inflect_engine = inflect.engine()
 
 firstLoad = True #check this on_ready() and then set it to false so we never duplicate the threads
 
+sentry_sdk.init(dsn=os.getenv("SENTRY_DSN"))
+
 @client.event
 async def on_ready():
 	global firstLoad
-	
+
 	print(client.user, "has connected to Discord!")
-	
+
 	if firstLoad:
 		loop = asyncio.get_event_loop()
 		loop.create_task(scrape_latest())
@@ -51,20 +53,20 @@ async def scrape_latest():
 			#Messages to output to Cyberscore Discord
 			for msg in cs_results:
 				print(msg)
-				
+
 				#create embed for Discord
 				embed = discord.Embed(description=msg)
 				#this can often fail with a 504 HTTPException if Discord is having server issues
 				#ideally we should add handling for this at some point and retry the message
 				#as otherwise the message being sent just fails and is skipped
 				await cs_channel.send(embed=embed)
-			
+
 			#Messages to output to Pokémon Snap Discord
 			for msg in ps_results:
 				#create embed for Discord
 				embed = discord.Embed(description=msg)
 				await ps_channel.send(embed=embed)
-			
+
 			#Messages to output to Cyberscore mod logs
 			for msg in warn_results:
 				#create embed for Discord
@@ -75,8 +77,9 @@ async def scrape_latest():
 			for msg in size_results:
 				embed = discord.Embed(description=msg)
 				await cs_pokemon_channel.send(embed=embed)
-		except Exception:
+		except Exception as e:
 			traceback.print_exc()
+			sentry_sdk.capture_exception(e)
 			print("Exception occurred in latest subs scrape")
 		finally:
 			await asyncio.sleep(config.submissions_frequency)
@@ -90,7 +93,7 @@ async def scrape_leaderboards():
 			last_scrape_dt = last_scrape_dt.replace(tzinfo=timezone.utc) #force a timezone-aware datetime
 			lock_scrape = last_scrape_dt + timedelta(0.1)
 			next_scrape = last_scrape_dt + timedelta(1)
-		
+
 			print("Checking leaderboard scrape")
 			#we want the leaderboard scrape to only run around midnight UTC, so init a datetime
 			now = datetime.now(timezone.utc)
@@ -111,7 +114,7 @@ async def scrape_leaderboards():
 				#speedrun_change = await scrape_leaderboard("Speedrun")
 				proof_change = await scrape_leaderboard("Proof")
 				video_change = await scrape_leaderboard("Video")
-				
+
 				top10_change = starboard_change or medal_change or trophy_change or rainbow_change or arcade_change \
 							   or solution_change or challenge_change or collection_change or proof_change \
 							   or video_change or incremental_change
@@ -147,6 +150,7 @@ async def scrape_leaderboards():
 		except Exception as e:
 			print(e)
 			print("Exception occurred in leaderboards scrape")
+			sentry_sdk.capture_exception(e)
 		finally:
 			#and re-check hourly
 			await asyncio.sleep(config.leaderboard_frequency)
@@ -216,7 +220,7 @@ async def scrape_leaderboard(board_type, force = False, idx = 0, channel_id = co
 async def top_submitters(days = 1, idx = 0, channel_id = config.leaderboard_channel, board_type ="user"):
 	#board_type = "user" or "game"
 	channel = client.get_channel(channel_id)
-	
+
 	results = scrape.scrape_top_submitters(days, idx, board_type) #results is an array of [embed_body, range_string]
 	embed_body = results[0]
 	print(results[0])
@@ -233,7 +237,7 @@ async def top_submitters(days = 1, idx = 0, channel_id = config.leaderboard_chan
 		field_name = "Top " + noun + "s for today"
 	else:
 		field_name = "Top " + noun + "s for the last " + str(days) + " days"
-	
+
 	#if there was a non-default idx set (e.g., not just looking at top 10 users) additionally print what range
 	#we're looking at
 	if idx > 0:
@@ -315,7 +319,6 @@ async def on_message(message):
 		me = await client.fetch_user(101709643822157824)
 		await me.send(f"Sellybot DM from {message.author}:\n{message.content}")
 		return
-		
 
 	#we don't want to support any message requests in the NPS server
 	if message.guild.id == config.ps_server_id:
@@ -409,7 +412,7 @@ async def handle_submitters(message, board_type): #board_type is either "user" o
 	if len(args) > 1:
 		#first potential parameter is the number of days we want (e.g., "!subs 7" shows top submitters in the last week)
 		daysParam = args[1]
-		
+
 		#if there was a second parameter added, use that as where to look on the leaderboard
 		#e.g. "!subs ytd 20" shows positions 20-29 for most subs year-to-date
 		if len(args) > 2:
@@ -441,7 +444,7 @@ async def handle_chart_challenge(message):
 	idx = 0 #default parameter
 	month = "now" #default parameter
 	args = get_args(message)
-	
+
 	if len(args) > 1:
 		for param in args:
 			if param.isnumeric():
@@ -450,7 +453,7 @@ async def handle_chart_challenge(message):
 				#no error message on high indices because the size of the board varies monthly and rarely hits 100 anyway
 			elif param != "!cc":
 				month = param
-	
+
 	#the site doesn't use a leading zero for months in the URL, so we need some handling for that
 	if month == "now":
 		# the '#' character in this string strips the leading zero
@@ -504,7 +507,7 @@ async def get_pokemon_dex(message):
 	if not params or " " not in params:
 		await report_error(message.channel.id, "You must supply both a dex item to look up, and a Pokémon form name to search for. Use `!forms {dex_number}` to see valid form names for a certain species.")
 		return
-	
+
 	if params.startswith("size_type"):
 		mon = pokemon.format_name(params.removeprefix("size_type").strip())
 		output = pokemon.get_type(mon)
@@ -539,19 +542,19 @@ async def compare_height(message):
 	if not m:
 		await report_error(message.channel.id, "Could not find a Pokemon name and height in your message. Please include both in that order, e.g., `!height Blastoise 1.74`")
 		return
-	
+
 	mon = pokemon.format_name(m.group(1))
 	result = pokemon.get_height_chance(mon, float(m.group(2)))
 	if not result:
 		await report_error(message.channel.id, "Pokemon "+m.group(1)+" could not be matched to any game master entry. Try searching for form names by dex number to see what valid names there are, e.g., `!forms 20` for Raticate")
 		return
-	
+
 	#get correct article
 	if m.group(1).title()[0] in "AEIOU":
 		a_an = "n"
 	else:
 		a_an = ""
-	
+
 	size_str = "larger" if result[0] > 0 else "smaller"
 	output = "Chance of a"+a_an+" " + m.group(1).title() + " " + size_str + " than " + m.group(2) + " m:\n"
 	win_chance = result[1]
@@ -573,7 +576,7 @@ async def compare_weight(message):
 	if not m:
 		await report_error(message.channel.id, "Could not find a Pokemon name and height in your message. Please include both in that order, e.g., `!weight Butterfree 51.97`")
 		return
-	
+
 	mon = pokemon.format_name(m.group(1))
 	result = pokemon.get_weight_chance(mon, float(m.group(2)))
 	if not result:
@@ -609,7 +612,8 @@ async def handle_lead_graph(message):
 
 	try:
 		os.remove("data/graphs/"+graph_name)
-	except:
+	except Exception as e:
+		sentry_sdk.capture_exception(e)
 		print("Error removing graph", graph_name)
 
 async def handle_user_graph(message):
@@ -627,7 +631,8 @@ async def handle_user_graph(message):
 
 	try:
 		os.remove("data/graphs/" + graph_name)
-	except:
+	except Exception as e:
+		sentry_sdk.capture_exception(e)
 		print("Error removing graph", graph_name)
 
 def get_args(message):
