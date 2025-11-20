@@ -639,13 +639,23 @@ def get_args(message):
 async def debug(message):
 	if len(message.content) > 7:
 		debugParam = message.content.removeprefix("!debug ")
-		if debugParam.startswith("forcedaily "):
+		if debugParam.lower().startswith("forcedaily "):
 			forceParam = debugParam.removeprefix("forcedaily ")
 			await scrape_leaderboard(forceParam)
+		if debugParam.lower().startswith("ping"):
+			await direct_output(message.channel, "pong")
+		else if debugParam.lower() == "syn"):
+			await direct_output(message.channel, "ACK")
+
 
 async def report_error(channel_id, message):
 	channel = client.get_channel(channel_id)
 	await channel.send(message)
+
+#report_error is a good name for actual error reporting but sometimes we want
+#to do exactly the same thing but without implying it's an error
+async def direct_output(channel_id, message):
+	await report_error(channel_id, message)
 
 #allow running the bot in IDLE or PyCharm for testing/utility funcs without actually connecting to Discord
 if 'idlelib.run' not in sys.modules and "PYCHARM_HOSTED" not in os.environ:
