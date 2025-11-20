@@ -271,6 +271,9 @@ def get_bounds(mon):
 	mon = format_name(mon)
 	bounds = get_class_boundaries(mon)
 
+	if not bounds:
+		return False
+
 	output = "```\n"
 	max_height = bounds[0]*bounds[1][5]
 	max_height_length = len(format_size(max_height))
