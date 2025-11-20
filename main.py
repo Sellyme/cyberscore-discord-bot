@@ -643,9 +643,9 @@ async def debug(message):
 			forceParam = debugParam.removeprefix("forcedaily ")
 			await scrape_leaderboard(forceParam)
 		if debugParam.lower().startswith("ping"):
-			await direct_output(message.channel, "pong")
+			await direct_output(message.channel.id, "pong")
 		elif debugParam.lower() == "syn":
-			await direct_output(message.channel, "ACK")
+			await direct_output(message.channel.id, "ACK")
 
 
 async def report_error(channel_id, message):
