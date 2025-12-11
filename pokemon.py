@@ -48,9 +48,11 @@ def get_game_master():
 					if not isinstance(form['form'], str):
 						print("Error: Invalid form",form['form'],"found for",pokemon_name)
 
-						#Falinks' base form appears to error out due to being an integer, so correct that
+						#Some Pokemon have a forms list but the default form is just an integer
 						if form['form'] == 2325 and pokemon_name == "FALINKS":
 							form_list.append("FALINKS")
+						elif form['form'] == 3020 and pokemon_name == "BEWEAR":
+							form_list.append("BEWEAR")
 						else:
 							continue
 					elif 'isCostume' in form and form['isCostume']:
