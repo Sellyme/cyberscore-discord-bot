@@ -46,15 +46,11 @@ def get_game_master():
 				#if this Pokemon has a form list, iterate through them all
 				for form in formSettings['forms']:
 					if not isinstance(form['form'], str):
-						print("Error: Invalid form",form['form'],"found for",pokemon_name)
-
-						#Some Pokemon have a forms list but the default form is just an integer
-						if form['form'] == 2325 and pokemon_name == "FALINKS":
-							form_list.append("FALINKS")
-						elif form['form'] == 3020 and pokemon_name == "BEWEAR":
-							form_list.append("BEWEAR")
-						else:
-							continue
+						#Forms that are just an integer ID have become much more common
+						#These seem to map simply to a "_NORMAL" or no-suffix normal form.
+						#print("Error: Invalid form",form['form'],"found for",pokemon_name)
+						if pokemon_name not in form_list:
+							form_list.append(pokemon_name)
 					elif 'isCostume' in form and form['isCostume']:
 						#ignore costume mons
 						continue
@@ -62,7 +58,8 @@ def get_game_master():
 						#also ignore 2019 clone pokemon, which aren't tagged costume
 						continue
 					else:
-						form_list.append(form['form'])
+						if form['form'] not in form_list:
+							form_list.append(form['form'])
 			else:
 				form_list.append(formSettings['pokemon'])
 
